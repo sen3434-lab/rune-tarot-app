@@ -14,6 +14,7 @@
   .hero h1 { font-size: 20px; line-height: 1.5; margin-top: 8px; }
   #askForm textarea { min-height: 70px; resize: vertical; }
   .draw-btn-wrap { display: flex; justify-content: center; margin-top: 20px; }
+  .chip-intro { text-align: center; font-size: 12px; color: var(--muted-foreground); margin: 22px 0 4px; }
 
   #resultView { display: none; }
   .orientation-tag {
@@ -59,7 +60,9 @@
       <p class="muted small mt-8">질문을 적어주시면 그 상황에 맞춰 룬을 해석해드려요.<br/>비워두셔도 오늘의 조언으로 읽어드릴게요.</p>
     </div>
 
+    <div class="chip-intro">질문이 잘 떠오르지 않으신가요? 아래에서 골라보세요</div>
     <form id="askForm" class="mt-24">
+      <div class="chip-grid" id="chipGrid"></div>
       <div class="field">
         <textarea id="questionText" placeholder="예: 지금 이직을 고민하고 있어요. 지금이 움직일 때일까요?"></textarea>
       </div>
@@ -146,6 +149,7 @@
 import { getSb, getSession, getMember, renderBottomNav, showToast, isSubscribed, APP_KEY } from '/js/app.js';
 import { getRunes } from '/js/runes.js';
 import { startCastSound, stopCastSound } from '/js/castSound.js';
+import { pickRandomQuestions } from '/js/questionPrompts.js';
 
 renderBottomNav('/draw.html');
 
@@ -155,11 +159,14 @@ const resultView = document.getElementById('resultView');
 const limitBoxAnon = document.getElementById('limitBoxAnon');
 const limitBoxMember = document.getElementById('limitBoxMember');
 const askForm = document.getElementById('askForm');
+const chipGrid = document.getElementById('chipGrid');
+const questionText = document.getElementById('questionText');
 
 let session = null;
 let member = null;
 let currentRune = null;
 let currentReading = null;
+let selectedQuestion = null;
 
 (async () => {
   session = await getSession();
@@ -168,6 +175,42 @@ let currentReading = null;
     document.getElementById('downloadBtn').textContent = '🔒 배경화면 다운로드 (프리미엄)';
   }
 })();
+
+// A fresh set of sample questions every time the page loads, just like the
+// mood chips on the color-tarot home screen — tap one to fill the box,
+// tap again (or type your own) to clear it.
+function renderQuestionChips() {
+  chipGrid.innerHTML = '';
+  pickRandomQuestions(6).forEach((q) => {
+    const chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = 'chip';
+    chip.innerHTML = `<span>${q.ic}</span><span>${q.text}</span>`;
+    chip.addEventListener('click', () => {
+      const wasSelected = chip.classList.contains('selected');
+      chipGrid.querySelectorAll('.chip').forEach((c) => c.classList.remove('selected'));
+      if (!wasSelected) {
+        chip.classList.add('selected');
+        selectedQuestion = q.text;
+        questionText.value = q.text;
+      } else {
+        selectedQuestion = null;
+        questionText.value = '';
+      }
+    });
+    chipGrid.appendChild(chip);
+  });
+}
+renderQuestionChips();
+
+// typing a custom question deselects whichever chip was picked, so the
+// selected-chip highlight never lies about what's actually in the box
+questionText.addEventListener('input', () => {
+  if (questionText.value !== selectedQuestion) {
+    selectedQuestion = null;
+    chipGrid.querySelectorAll('.chip').forEach((c) => c.classList.remove('selected'));
+  }
+});
 
 async function pickRandomRune() {
   const runes = await getRunes();
@@ -298,7 +341,9 @@ function resetToAskView() {
   limitBoxAnon.style.display = 'none';
   limitBoxMember.style.display = 'none';
   askView.style.display = 'block';
-  document.getElementById('questionText').value = '';
+  questionText.value = '';
+  selectedQuestion = null;
+  renderQuestionChips();
 }
 document.getElementById('backBtn').addEventListener('click', (e) => { e.preventDefault(); resetToAskView(); });
 document.getElementById('redrawBtn').addEventListener('click', resetToAskView);
