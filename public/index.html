@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>OZ 룬타로 · 홈</title>
+<link rel="stylesheet" href="/css/style.css"/>
+<link rel="manifest" href="/manifest.json"/>
+<meta name="theme-color" content="#bc6338"/>
+<link rel="icon" href="/icons/icon-192.png"/>
+<link rel="apple-touch-icon" href="/icons/icon-192.png"/>
+<style>
+  .hero { position: relative; text-align: center; padding: 18px 0 6px; }
+  .hero-aura {
+    position: absolute; top: -60px; left: 50%; transform: translateX(-50%);
+    width: 320px; height: 220px; z-index: 0; pointer-events: none;
+    background: radial-gradient(circle at 30% 40%, rgba(188,99,56,.18), transparent 55%),
+                radial-gradient(circle at 70% 60%, rgba(44,91,75,.14), transparent 55%);
+    filter: blur(26px);
+  }
+  .hero-eyebrow { position: relative; font-size: 10.5px; letter-spacing: 5px; color: var(--primary); font-weight: 600; text-transform: uppercase; }
+  .hero h1 { position: relative; font-size: 22px; line-height: 1.5; margin-top: 10px; }
+  .hero p { position: relative; color: var(--muted-foreground); font-size: 13px; margin-top: 10px; line-height: 1.6; }
+  .hero-medallion { position: relative; margin-top: 18px; }
+
+  .nav-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 28px; }
+  .nav-card { border: 0.8px solid var(--border); border-radius: 16px; padding: 20px 16px; text-align: center; background: var(--card); }
+  .nav-card .ic { font-size: 28px; margin-bottom: 8px; }
+  .nav-card .title { font-size: 14.5px; font-weight: 600; }
+  .nav-card .desc { font-size: 11.5px; color: var(--muted-foreground); margin-top: 4px; line-height: 1.5; }
+
+  .about-box p { font-size: 13.5px; line-height: 1.85; color: var(--foreground); margin-bottom: 12px; }
+  .about-box p:last-child { margin-bottom: 0; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a href="/index.html" class="brand">OZ <span>ᚱ</span> 룬타로</a>
+  <div class="topbar-actions">
+    <span class="badge badge-free" id="roleBadge">불러오는 중</span>
+    <a href="/settings.html" class="icon-btn">계정</a>
+  </div>
+</div>
+
+<div class="container">
+  <div class="hero">
+    <div class="hero-aura"></div>
+    <div class="hero-eyebrow">Elder Futhark</div>
+    <h1 id="heroTitle">룬이 오늘의 답을 들려드릴게요</h1>
+    <p>북유럽 룬 문자로 지금 당신에게 필요한 통찰을 전합니다.<br/>룬을 뽑아 질문에 답을 구해보세요.</p>
+    <div class="hero-medallion">
+      <div class="rune-medallion sm" style="margin:0 auto;"><div class="glyph">ᚱ</div></div>
+    </div>
+  </div>
+
+  <div class="nav-grid">
+    <a class="nav-card" href="/draw.html">
+      <div class="ic">🔮</div>
+      <div class="title">룬 뽑기</div>
+      <div class="desc">질문을 품고 룬 하나를 뽑아보세요</div>
+    </a>
+    <a class="nav-card" href="/daily.html">
+      <div class="ic">☀️</div>
+      <div class="title">오늘의 룬</div>
+      <div class="desc">세 룬이 전하는 오늘 하루 이야기</div>
+    </a>
+    <a class="nav-card" href="/premium.html">
+      <div class="ic">✨</div>
+      <div class="title">프리미엄 룬</div>
+      <div class="desc">애정 · 주식 · 부동산 · 건강</div>
+    </a>
+    <a class="nav-card" href="#about">
+      <div class="ic">ᛟ</div>
+      <div class="title">룬이란?</div>
+      <div class="desc">부적으로 쓰인 룬, 오늘의 개운법</div>
+    </a>
+  </div>
+
+  <div class="hr"></div>
+
+  <div id="about">
+    <div class="section-label">About Runes</div>
+    <h2 class="serif" style="font-size:18px; margin-bottom:14px;">룬이란 무엇인가요</h2>
+    <div class="card about-box">
+      <p>
+        고대 북유럽 사람들은 룬을 단순한 문자가 아니라 <strong>직접 몸에 지니고 곁에 두는 부적</strong>으로 다뤘습니다.
+        나무 조각이나 원석에 룬 문자를 새기고, 재물을 부르고 싶을 땐 페후(ᚠ)를, 위험으로부터 스스로를 지키고
+        싶을 땐 투리사즈(ᚦ)를 새겨 지갑이나 문 앞에 두었습니다. 정해진 요일에 촛불이나 향으로 부적에 기운을
+        불어넣고("활성화"), 기운이 탁해졌다 느껴지면 달빛이나 흙, 연기로 다시 정화하는 것도 오래된 관습이었습니다.
+        즉 룬은 읽는 문자이기 전에, <strong>쓰고 지니는 개운의 도구</strong>였습니다.
+      </p>
+      <p>
+        오늘날에는 그 방식이 조금 달라졌을 뿐 마음은 같습니다. 매일 아침 몸에 지닐 부적을 새기는 대신 질문 하나를
+        품고 룬을 뽑아 답을 구하고("룬 뽑기"), 하루의 흐름을 미리 읽어보고("오늘의 룬"), 새긴 부적 대신 룬이 담긴
+        이미지를 지갑처럼 휴대폰에 넣고 다닙니다. 형태는 부적에서 화면으로 바뀌었어도, "필요한 순간 룬의 상징적
+        힘을 곁에 두고 싶다"는 마음은 그대로예요.
+      </p>
+      <p class="muted small mt-16">
+        여기서 다루는 건 맛보기예요. 24개 룬 각각의 신화와 신성, 조합으로 함께 읽는 법, 부적을 직접 만드는
+        구체적인 방법까지 — 룬을 제대로 배우고 싶으시다면 아래에서 안내해드릴게요.
+      </p>
+      <a href="/edu.html" class="btn btn-primary btn-block mt-16">룬 배우러 가기 →</a>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { getSession, getMember, renderBottomNav } from '/js/app.js';
+
+renderBottomNav('/index.html');
+
+const roleBadge = document.getElementById('roleBadge');
+
+async function refreshBadge() {
+  const session = await getSession();
+  if (!session) {
+    roleBadge.textContent = '비로그인';
+    roleBadge.className = 'badge badge-free';
+    return;
+  }
+  const member = await getMember(session);
+  if (!member) { roleBadge.textContent = '오류'; return; }
+  if (member.subscription_status === 'active') {
+    roleBadge.textContent = '✦ 프리미엄 구독중';
+    roleBadge.className = 'badge badge-active';
+  } else {
+    roleBadge.textContent = '무료 회원';
+    roleBadge.className = 'badge badge-free';
+  }
+  if (member.display_name) {
+    document.getElementById('heroTitle').textContent = `${member.display_name}님, 오늘의 답을 들려드릴게요`;
+  }
+}
+refreshBadge();
+</script>
+</body>
+</html>

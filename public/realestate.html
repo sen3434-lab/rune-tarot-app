@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>OZ 룬타로 · 부동산룬</title>
+<link rel="stylesheet" href="/css/style.css"/>
+<link rel="manifest" href="/manifest.json"/>
+<meta name="theme-color" content="#bc6338"/>
+<link rel="icon" href="/icons/icon-192.png"/>
+</head>
+<body>
+
+<div class="topbar">
+  <a href="/index.html" class="brand">OZ <span>ᚱ</span> 룬타로</a>
+  <div class="topbar-actions">
+    <a href="/premium.html" class="icon-btn">✨ 프리미엄</a>
+  </div>
+</div>
+
+<div class="container">
+
+  <div class="category-hero">
+    <div class="ic" id="categoryIcon"></div>
+    <h1>부동산룬 <span id="categoryLabel" style="display:none;"></span></h1>
+    <p class="muted small mt-8">이사, 매매, 계약 — 지금 이 결정, 룬은 어떻게 볼까요?</p>
+  </div>
+
+  <div id="gateView" class="gate-box" style="display:none;">
+    <div class="ic">🔒</div>
+    <h2 id="gateTitle"></h2>
+    <p id="gateDesc"></p>
+    <a href="#" class="btn btn-primary mt-24" id="gateBtn"></a>
+  </div>
+
+  <div id="askView" style="display:none;">
+    <form id="askForm" class="mt-24">
+      <div class="field">
+        <textarea id="questionText" placeholder=""></textarea>
+      </div>
+      <div class="draw-btn-wrap" style="display:flex; justify-content:center; margin-top:20px;">
+        <button type="submit" class="btn btn-primary">🏠 룬으로 물어보기</button>
+      </div>
+    </form>
+  </div>
+
+  <div id="loadingView" style="display:none;">
+    <div class="cast-loading">
+      <div class="cast-stage">
+        <div class="cast-cloth"></div>
+        <div class="cast-stone s1">ᛒ</div>
+        <div class="cast-stone s2">ᛖ</div>
+        <div class="cast-stone s3">ᛗ</div>
+      </div>
+      <p class="cast-label">룬이 부동산룬을 들여다보고 있어요...</p>
+    </div>
+  </div>
+
+  <div id="resultView" style="display:none;">
+    <div class="rune-medallion mt-24" id="medallion"><div class="glyph" id="glyphEl"></div></div>
+    <div class="rune-name" id="runeNameEl"></div>
+    <div class="center"><span class="orientation-tag" id="orientationTag" style="display:inline-block; margin-top:10px; font-size:11.5px; padding:4px 12px; border-radius:999px; background:var(--secondary); color:var(--primary-dark); font-weight:600;"></span></div>
+
+    <div class="section-label mt-24">리딩</div>
+    <div class="card reading-box">
+      <p id="readingText" style="font-size:14.5px; line-height:1.9; white-space:pre-wrap;"></p>
+    </div>
+
+    <div class="caution-box">
+      <div class="cb-label">주의할 점</div>
+      <div id="cautionText"></div>
+    </div>
+
+    <div class="result-actions mt-24" style="display:flex; gap:10px;">
+      <button class="btn btn-primary btn-block" id="redrawBtn">다른 질문으로 다시 뽑기</button>
+    </div>
+  </div>
+
+</div>
+
+<script type="module">
+import { initPremiumPage } from '/js/premium.js';
+initPremiumPage({
+  category: 'realestate',
+  label: '부동산룬',
+  icon: '🏠',
+  placeholder: '예: 지금 보고 있는 집으로 이사하는 게 맞을지 궁금해요.',
+  navActive: '/realestate.html',
+});
+</script>
+</body>
+</html>

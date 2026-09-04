@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>OZ 룬타로 · 프리미엄 구독</title>
+<link rel="stylesheet" href="/css/style.css"/>
+<link rel="manifest" href="/manifest.json"/>
+<meta name="theme-color" content="#bc6338"/>
+<link rel="icon" href="/icons/icon-192.png"/>
+<link rel="apple-touch-icon" href="/icons/icon-192.png"/>
+<style>
+  .promo { background: linear-gradient(135deg, rgba(188,99,56,.10), rgba(220,234,228,.5)); border-radius: 18px; padding: 26px 22px; text-align: center; }
+  .promo h1 { font-size: 20px; margin-bottom: 8px; }
+  .promo p { font-size: 13px; color: var(--muted-foreground); }
+  .glyph-row { display: flex; justify-content: center; gap: 14px; margin: 16px 0; font-size: 22px; color: var(--primary); font-family: 'Segoe UI Historic', 'Noto Sans Runic', sans-serif; }
+
+  .curr-grid { display: grid; grid-template-columns: 1fr; gap: 12px; margin-top: 14px; }
+  .curr-card { border: 0.8px solid var(--border); border-radius: 14px; padding: 16px 18px; display: flex; gap: 14px; align-items: flex-start; }
+  .curr-card .num { flex-shrink: 0; width: 34px; height: 34px; border-radius: 50%; background: var(--secondary); font-size: 16px; display: flex; align-items: center; justify-content: center; }
+  .curr-card .t { font-weight: 600; font-size: 14px; margin-bottom: 3px; }
+  .curr-card .d { font-size: 12.5px; color: var(--muted-foreground); line-height: 1.6; }
+
+  .plan { border: 0.8px solid var(--primary); border-radius: 14px; padding: 22px 18px; text-align: center; margin-top: 22px; box-shadow: 0 4px 16px rgba(188,99,56,.12); position: relative; }
+  .plan .price { font-size: 24px; font-weight: 600; margin: 10px 0 4px; color: var(--primary-dark); }
+  .plan .price small { font-size: 11px; font-weight: 400; color: var(--muted-foreground); }
+  .plan ul { list-style: none; text-align: left; font-size: 12.5px; color: var(--muted-foreground); margin: 14px auto; max-width: 240px; }
+  .plan ul li { margin-bottom: 7px; padding-left: 16px; position: relative; }
+  .plan ul li::before { content:'✓'; position:absolute; left:0; color: var(--primary); }
+
+  .contact-card { margin-top: 24px; background: var(--secondary); border-radius: 16px; padding: 22px; text-align: center; }
+  .contact-card .t { font-weight: 600; font-size: 14.5px; margin-bottom: 4px; }
+  .contact-card .d { font-size: 12.5px; color: var(--muted-foreground); margin-bottom: 16px; }
+  .contact-row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a href="/index.html" class="brand">OZ <span>ᚱ</span> 룬타로</a>
+  <div class="topbar-actions"></div>
+</div>
+
+<div class="container">
+
+  <div class="promo">
+    <div class="glyph-row"><span>ᚦ</span><span>ᚠ</span><span>ᛒ</span><span>ᚨ</span></div>
+    <h1>프리미엄 룬 이용권</h1>
+    <p>애정 · 주식 · 부동산 · 건강 — 네 영역의 깊이 있는 룬 리딩을<br/>하나의 이용권으로 모두 만나보세요.</p>
+  </div>
+
+  <div class="section-label mt-32">무엇이 열리나요</div>
+  <div class="curr-grid">
+    <div class="curr-card">
+      <div class="num">💗</div>
+      <div><div class="t">애정룬</div><div class="d">지금 만나는 사람, 혹은 앞으로의 인연에 대해 룬이 들려주는 이야기.</div></div>
+    </div>
+    <div class="curr-card">
+      <div class="num">📈</div>
+      <div><div class="t">주식룬</div><div class="d">매수·매도 타이밍과 투자 심리에 대한 룬의 조언.</div></div>
+    </div>
+    <div class="curr-card">
+      <div class="num">🏠</div>
+      <div><div class="t">부동산룬</div><div class="d">매매·이사·계약 등 부동산 관련 결정에 대한 룬의 조언.</div></div>
+    </div>
+    <div class="curr-card">
+      <div class="num">🌿</div>
+      <div><div class="t">건강룬</div><div class="d">몸과 마음의 상태, 지금 돌봐야 할 부분을 짚어주는 룬의 신호.</div></div>
+    </div>
+  </div>
+
+  <div id="planSection">
+    <div class="plan">
+      <div class="serif" style="font-size:15px;">프리미엄 룬 평생 이용권</div>
+      <div class="price">₩9,900<small> 1회 결제</small></div>
+      <ul>
+        <li>애정 · 주식 · 부동산 · 건강 룬 무제한</li>
+        <li>각 영역별 개인 맞춤 질문 리딩</li>
+        <li>평생 재결제 없음</li>
+      </ul>
+      <button class="btn btn-primary btn-block" id="subscribeBtn">프리미엄 이용권 구매하기</button>
+      <p class="small muted center mt-8" id="twaNote" style="display:none;">앱 결제는 준비 중이에요.<br/>웹에서 구매하실 수 있어요.</p>
+      <p class="small muted center mt-16" id="subNote"></p>
+    </div>
+  </div>
+
+  <div id="alreadyActive" class="mt-32" style="display:none;">
+    <div class="card center" style="padding:26px 20px;">
+      <div style="font-size:26px;margin-bottom:8px;">🎉</div>
+      <p style="font-weight:600;">이미 프리미엄 룬을 이용 중이에요</p>
+      <p class="small muted mt-8">애정 · 주식 · 부동산 · 건강 룬을 지금 바로 만나보세요.</p>
+      <a href="/premium.html" class="btn btn-primary mt-16">프리미엄 룬으로 가기</a>
+    </div>
+  </div>
+
+  <div class="contact-card">
+    <div class="t">문의</div>
+    <div class="d">궁금하신 점을 편하게 남겨주세요.</div>
+    <div class="contact-row">
+      <a href="sms:01024269731" class="btn btn-outline btn-sm">📱 문자 문의 (010-2426-9731)</a>
+      <a href="mailto:ozmaj@naver.com" class="btn btn-outline btn-sm">✉️ 이메일 문의</a>
+    </div>
+  </div>
+
+</div>
+
+<script type="module">
+import { renderBottomNav, getSession, getMember, showToast, isTWA, isSubscribed } from '/js/app.js';
+renderBottomNav('/premium.html');
+
+if (isTWA()) {
+  document.getElementById('subscribeBtn').style.display = 'none';
+  document.getElementById('twaNote').style.display = 'block';
+}
+
+async function reflectMemberStatus() {
+  const session = await getSession();
+  if (!session) return;
+  const member = await getMember(session);
+  if (!member) return;
+
+  if (isSubscribed(member)) {
+    document.getElementById('planSection').style.display = 'none';
+    document.getElementById('alreadyActive').style.display = 'block';
+  }
+}
+reflectMemberStatus();
+
+document.getElementById('subscribeBtn').addEventListener('click', async () => {
+  const session = await getSession();
+  if (!session) {
+    showToast('구매는 로그인 후 이용하실 수 있어요.');
+    setTimeout(() => window.location.href = '/auth.html', 900);
+    return;
+  }
+  document.getElementById('subNote').textContent = '💳 결제 연동은 준비 중입니다 (placeholder) — 실제 서비스에서는 PG사 결제창이 연결됩니다.';
+});
+</script>
+</body>
+</html>

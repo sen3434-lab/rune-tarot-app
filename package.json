@@ -1,0 +1,19 @@
+{
+  "name": "rune-tarot-app",
+  "version": "1.0.0",
+  "description": "OZ 룬타로 — 룬 뽑기, 오늘의 룬, 프리미엄 룬(애정/주식/부동산/건강)",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.112.4",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1"
+  }
+}

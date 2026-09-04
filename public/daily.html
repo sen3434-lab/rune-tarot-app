@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>OZ 룬타로 · 오늘의 룬</title>
+<link rel="stylesheet" href="/css/style.css"/>
+<link rel="manifest" href="/manifest.json"/>
+<meta name="theme-color" content="#bc6338"/>
+<link rel="icon" href="/icons/icon-192.png"/>
+<style>
+  .hero { text-align: center; padding: 10px 0 6px; }
+  .hero-eyebrow { font-size: 10.5px; letter-spacing: 5px; color: var(--primary); font-weight: 600; text-transform: uppercase; }
+  .hero h1 { font-size: 20px; line-height: 1.5; margin-top: 8px; }
+  .date-tag { display: inline-block; margin-top: 10px; font-size: 12px; color: var(--muted-foreground); }
+
+  .draw-btn-wrap { display: flex; justify-content: center; margin-top: 26px; }
+
+  .trio-row { display: flex; justify-content: center; gap: 14px; margin-top: 24px; }
+  .trio-item { text-align: center; flex: 1; max-width: 140px; }
+  .trio-item .pos-label { font-size: 10.5px; color: var(--muted-foreground); letter-spacing: 1px; margin-bottom: 8px; }
+  .trio-item .rune-name { font-size: 13.5px; margin-top: 8px; }
+  .trio-item .rune-name .en { font-size: 10px; }
+
+  .one-line-box {
+    text-align: center; background: var(--secondary); border-radius: 14px;
+    padding: 16px 18px; margin: 22px 0; font-size: 15px; color: var(--primary-dark); font-weight: 600;
+  }
+  .reading-box p { font-size: 14.5px; line-height: 1.9; color: var(--foreground); white-space: pre-wrap; }
+
+
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a href="/index.html" class="brand">OZ <span>ᚱ</span> 룬타로</a>
+  <div class="topbar-actions">
+    <a href="/settings.html" class="icon-btn">계정</a>
+  </div>
+</div>
+
+<div class="container">
+
+  <div id="introView">
+    <div class="hero">
+      <div class="hero-eyebrow">Rune of the Day</div>
+      <h1 id="introTitle">오늘의 룬을 만나보세요</h1>
+      <p class="muted small mt-8">상황 · 도전 과제 · 조언, 세 룬이 이어주는 오늘 하루 이야기예요.<br/>하루에 한 번만 확인할 수 있어요.</p>
+      <div class="date-tag" id="dateTag"></div>
+    </div>
+    <div class="draw-btn-wrap">
+      <button class="btn btn-primary" id="drawBtn">☀️ 오늘의 룬 확인하기</button>
+    </div>
+  </div>
+
+  <div id="loadingView" style="display:none;">
+    <div class="cast-loading">
+      <div class="cast-stage">
+        <div class="cast-cloth"></div>
+        <div class="cast-stone s1">ᚺ</div>
+        <div class="cast-stone s2">ᚾ</div>
+        <div class="cast-stone s3">ᛃ</div>
+      </div>
+      <p class="cast-label">세 룬을 던지고 있어요...</p>
+    </div>
+  </div>
+
+  <div id="resultView" style="display:none;">
+    <div class="trio-row" id="trioRow"></div>
+
+    <div class="one-line-box" id="oneLineBox"></div>
+    <div class="section-label">오늘의 리딩</div>
+    <div class="card reading-box">
+      <p id="readingText"></p>
+    </div>
+    <p class="small muted center mt-16">오늘 이 앱을 찾은 모든 분께 같은 룬과 같은 이야기가 전해져요.</p>
+  </div>
+
+</div>
+
+<script type="module">
+import { getSession, getMember, renderBottomNav, fmtDate, showToast } from '/js/app.js';
+import { startCastSound, stopCastSound } from '/js/castSound.js';
+
+renderBottomNav('/daily.html');
+
+const introView = document.getElementById('introView');
+const loadingView = document.getElementById('loadingView');
+const resultView = document.getElementById('resultView');
+
+(async () => {
+  const session = await getSession();
+  const member = session ? await getMember(session) : null;
+  if (member?.display_name) {
+    document.getElementById('introTitle').textContent = `${member.display_name}님, 오늘의 룬을 만나보세요`;
+  }
+})();
+
+document.getElementById('dateTag').textContent = fmtDate(new Date());
+
+// The server computes "오늘의 룬" once per calendar day and serves the
+// SAME three runes + reading to every visitor (see GET /api/daily-rune in
+// server.js) — this is just a light client-side cache keyed by the
+// server's own `date` field, so a repeat visit today skips the network
+// round trip instead of re-fetching an answer that hasn't changed.
+const STORAGE_KEY = 'rt_daily_rune';
+
+function loadCached() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
+}
+
+function saveCached(payload) {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(payload)); } catch {}
+}
+
+const POSITIONS = ['오늘의 상황', '도전 과제', '조언'];
+
+function renderTrio(runes) {
+  const trioRow = document.getElementById('trioRow');
+  trioRow.innerHTML = runes.map((r, i) => `
+    <div class="trio-item">
+      <div class="pos-label">${POSITIONS[i]}</div>
+      <div class="rune-medallion sm" style="margin:0 auto;"><div class="glyph">${r.glyph}</div></div>
+      <div class="rune-name">${r.name_ko}<span class="en"><br/>${r.name_en}</span></div>
+    </div>
+  `).join('');
+}
+
+function showResult(data) {
+  introView.style.display = 'none';
+  loadingView.style.display = 'none';
+  resultView.style.display = 'block';
+  renderTrio(data.runes);
+  document.getElementById('oneLineBox').textContent = data.one_line || '';
+  document.getElementById('readingText').textContent = data.reading || '';
+}
+
+async function fetchDailyRune() {
+  introView.style.display = 'none';
+  loadingView.style.display = 'block';
+  startCastSound();
+
+  try {
+    const res = await fetch('/api/daily-rune');
+    if (!res.ok) throw new Error('daily rune failed');
+    const data = await res.json();
+    stopCastSound();
+    saveCached(data);
+    showResult(data);
+  } catch (err) {
+    console.error(err);
+    stopCastSound();
+    loadingView.style.display = 'none';
+    introView.style.display = 'block';
+    showToast('오늘의 룬을 불러오지 못했어요. 잠시 후 다시 시도해주세요.');
+  }
+}
+
+document.getElementById('drawBtn').addEventListener('click', fetchDailyRune);
+
+// on load: today's answer is a fixed, shared value, so show it straight
+// away if we already have it cached for today's date. Computed in KST to
+// match the server's todayKST() — otherwise the two would disagree for a
+// 9-hour window around KST midnight (UTC and KST are on different days).
+const todayKST = new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10);
+const cached = loadCached();
+if (cached && cached.date === todayKST) {
+  showResult(cached);
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>OZ 룬타로 · 룬 뽑기</title>
+<link rel="stylesheet" href="/css/style.css"/>
+<link rel="manifest" href="/manifest.json"/>
+<meta name="theme-color" content="#bc6338"/>
+<link rel="icon" href="/icons/icon-192.png"/>
+<style>
+  .hero { text-align: center; padding: 10px 0 6px; }
+  .hero-eyebrow { font-size: 10.5px; letter-spacing: 5px; color: var(--primary); font-weight: 600; text-transform: uppercase; }
+  .hero h1 { font-size: 20px; line-height: 1.5; margin-top: 8px; }
+  #askForm textarea { min-height: 70px; resize: vertical; }
+  .draw-btn-wrap { display: flex; justify-content: center; margin-top: 20px; }
+
+  #resultView { display: none; }
+  .orientation-tag {
+    display: inline-block; margin-top: 10px; font-size: 11.5px; padding: 4px 12px;
+    border-radius: var(--radius-pill); background: var(--secondary); color: var(--primary-dark); font-weight: 600;
+  }
+  .reading-box p { font-size: 14.5px; line-height: 1.9; color: var(--foreground); white-space: pre-wrap; }
+
+  .talisman-card { border: 0.8px solid var(--border); border-radius: 16px; overflow: hidden; margin-top: 18px; }
+  .talisman-head { padding: 12px 16px; background: rgba(188,99,56,.06); border-bottom: 0.8px solid var(--border); font-weight: 600; font-size: 13.5px; color: var(--primary-dark); }
+  .talisman-body { padding: 14px 16px; }
+  .talisman-row { display: flex; gap: 10px; font-size: 13px; padding: 6px 0; border-bottom: 0.8px solid var(--border); }
+  .talisman-row:last-child { border-bottom: none; }
+  .talisman-row .tl { width: 62px; flex-shrink: 0; color: var(--muted-foreground); }
+  .talisman-row .tv { color: var(--foreground); line-height: 1.6; }
+  .mantra-line { text-align: center; font-style: italic; color: var(--primary-dark); font-size: 13.5px; padding: 14px 10px 4px; }
+
+  .ai-loading { text-align: center; padding: 20px 0; }
+  .ai-loading p { font-size: 12.5px; color: var(--muted-foreground); margin-top: 10px; }
+
+  .result-actions { display: flex; gap: 10px; margin-top: 24px; }
+  .result-actions .btn { flex: 1; }
+
+  .limit-box { text-align: center; padding: 60px 20px; }
+  .limit-box .ic { font-size: 34px; margin-bottom: 12px; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a href="/index.html" class="brand">OZ <span>ᚱ</span> 룬타로</a>
+  <div class="topbar-actions">
+    <a href="/settings.html" class="icon-btn">계정</a>
+  </div>
+</div>
+
+<div class="container">
+
+  <div id="askView">
+    <div class="hero">
+      <div class="hero-eyebrow">Draw a Rune</div>
+      <h1>지금, 무엇이 궁금하신가요?</h1>
+      <p class="muted small mt-8">질문을 적어주시면 그 상황에 맞춰 룬을 해석해드려요.<br/>비워두셔도 오늘의 조언으로 읽어드릴게요.</p>
+    </div>
+
+    <form id="askForm" class="mt-24">
+      <div class="field">
+        <textarea id="questionText" placeholder="예: 지금 이직을 고민하고 있어요. 지금이 움직일 때일까요?"></textarea>
+      </div>
+      <div class="draw-btn-wrap">
+        <button type="submit" class="btn btn-primary" id="drawBtn">🔮 룬 하나 뽑기</button>
+      </div>
+    </form>
+  </div>
+
+  <div id="limitBoxAnon" class="limit-box" style="display:none;">
+    <div class="ic">🌙</div>
+    <p><strong>비회원은 하루 1회만 무료로 뽑으실 수 있어요.</strong></p>
+    <p class="muted small mt-8">회원가입하시면 계속 룬을 뽑아보실 수 있어요.</p>
+    <div class="result-actions" style="max-width:320px;margin:20px auto 0;">
+      <a href="/auth.html" class="btn btn-primary">무료로 회원가입하기</a>
+    </div>
+  </div>
+
+  <div id="limitBoxMember" class="limit-box" style="display:none;">
+    <div class="ic">🌙</div>
+    <p><strong>오늘의 무료 룬 뽑기를 모두 사용하셨어요.</strong></p>
+    <p class="muted small mt-8">프리미엄 구독하시면 매일 무제한으로 뽑으실 수 있고,<br/>부적 배경화면 다운로드도 함께 이용하실 수 있어요.</p>
+    <div class="result-actions" style="max-width:320px;margin:20px auto 0;">
+      <a href="/subscribe.html" class="btn btn-primary">프리미엄 구독 보기</a>
+    </div>
+  </div>
+
+  <div id="loadingView" style="display:none;">
+    <div class="cast-loading">
+      <div class="cast-stage">
+        <div class="cast-cloth"></div>
+        <div class="cast-stone s1">ᚠ</div>
+        <div class="cast-stone s2">ᚱ</div>
+        <div class="cast-stone s3">ᛟ</div>
+      </div>
+      <p class="cast-label">룬을 던지고 있어요...</p>
+    </div>
+  </div>
+
+  <div id="resultView">
+    <a href="#" id="backBtn" class="small muted">← 다시 질문하기</a>
+
+    <div class="rune-medallion mt-24" id="medallion"><div class="glyph" id="glyphEl"></div></div>
+    <div class="rune-name" id="runeNameEl"></div>
+    <div class="rune-keyword" id="runeKeywordEl"></div>
+    <div class="center"><span class="orientation-tag" id="orientationTag"></span></div>
+
+    <div id="aiLoading" class="cast-loading">
+      <div class="cast-stage">
+        <div class="cast-cloth"></div>
+        <div class="cast-stone s1">ᚦ</div>
+        <div class="cast-stone s2">ᛉ</div>
+        <div class="cast-stone s3">ᛞ</div>
+      </div>
+      <p class="cast-label">룬의 메시지를 풀어내고 있어요...</p>
+    </div>
+
+    <div id="aiContent" style="display:none;">
+      <div class="section-label mt-24">리딩</div>
+      <div class="card reading-box">
+        <p id="readingText"></p>
+      </div>
+
+      <div class="talisman-card">
+        <div class="talisman-head">🪬 이 룬의 부적</div>
+        <div class="talisman-body">
+          <div class="talisman-row"><div class="tl">지니는 법</div><div class="tv" id="tlCarry"></div></div>
+        </div>
+        <div class="mantra-line" id="tlMantra"></div>
+      </div>
+    </div>
+
+    <div class="result-actions">
+      <button class="btn btn-outline" id="downloadBtn">📱 부적 배경화면 다운로드</button>
+      <button class="btn btn-primary" id="redrawBtn">새 룬 뽑기</button>
+    </div>
+  </div>
+
+</div>
+
+<canvas id="talismanCanvas" width="1080" height="2400" style="display:none;"></canvas>
+
+<script type="module">
+import { getSb, getSession, getMember, renderBottomNav, showToast, isSubscribed, APP_KEY } from '/js/app.js';
+import { getRunes } from '/js/runes.js';
+import { startCastSound, stopCastSound } from '/js/castSound.js';
+
+renderBottomNav('/draw.html');
+
+const askView = document.getElementById('askView');
+const loadingView = document.getElementById('loadingView');
+const resultView = document.getElementById('resultView');
+const limitBoxAnon = document.getElementById('limitBoxAnon');
+const limitBoxMember = document.getElementById('limitBoxMember');
+const askForm = document.getElementById('askForm');
+
+let session = null;
+let member = null;
+let currentRune = null;
+let currentReading = null;
+
+(async () => {
+  session = await getSession();
+  if (session) member = await getMember(session);
+  if (!isSubscribed(member)) {
+    document.getElementById('downloadBtn').textContent = '🔒 배경화면 다운로드 (프리미엄)';
+  }
+})();
+
+async function pickRandomRune() {
+  const runes = await getRunes();
+  return runes[Math.floor(Math.random() * runes.length)];
+}
+
+// 룬 뽑기는 비구독 사용자에게 하루 1회 무료 — 로그인 시 enrollments의
+// daily_reading_count/reset_date, 비로그인 시 localStorage로 추적한다.
+// (구독 회원은 무제한.) 부적 배경화면 다운로드는 별도로 구독 전용이다.
+const today = () => new Date().toISOString().slice(0, 10);
+
+async function canDrawToday() {
+  if (session && member) {
+    if (isSubscribed(member)) return true;
+    if (member.daily_reading_reset_date !== today()) return true;
+    return member.daily_reading_count < 1;
+  }
+  const raw = localStorage.getItem('rt_free_draw');
+  if (!raw) return true;
+  const { date, count } = JSON.parse(raw);
+  if (date !== today()) return true;
+  return count < 1;
+}
+
+async function recordDraw() {
+  if (session && member && !isSubscribed(member)) {
+    const sb = await getSb();
+    const resetToday = member.daily_reading_reset_date === today();
+    const newCount = resetToday ? member.daily_reading_count + 1 : 1;
+    await sb.from('enrollments').update({
+      daily_reading_count: newCount,
+      daily_reading_reset_date: today(),
+    }).eq('member_id', session.user.id).eq('app_key', APP_KEY);
+    member.daily_reading_count = newCount;
+    member.daily_reading_reset_date = today();
+  } else if (!session) {
+    const raw = localStorage.getItem('rt_free_draw');
+    const cur = raw ? JSON.parse(raw) : { date: today(), count: 0 };
+    const count = cur.date === today() ? cur.count + 1 : 1;
+    localStorage.setItem('rt_free_draw', JSON.stringify({ date: today(), count }));
+  }
+}
+
+async function loadReading(rune, question) {
+  const aiLoading = document.getElementById('aiLoading');
+  const aiContent = document.getElementById('aiContent');
+  aiLoading.style.display = 'block';
+  aiContent.style.display = 'none';
+
+  try {
+    const res = await fetch('/api/reading', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ id: rune.id, question, displayName: member?.display_name || null }),
+    });
+    if (!res.ok) throw new Error('reading failed');
+    const data = await res.json();
+    currentReading = data;
+
+    document.getElementById('readingText').textContent = data.reading || '';
+    document.getElementById('orientationTag').textContent = data.orientation === '역방향' ? '역방향 · Reversed' : '정방향 · Upright';
+
+    document.getElementById('tlCarry').textContent = rune.talisman_carry || '-';
+    document.getElementById('tlMantra').textContent = rune.mantra ? `"${rune.mantra}"` : '';
+
+    stopCastSound();
+    aiLoading.style.display = 'none';
+    aiContent.style.display = 'block';
+  } catch (err) {
+    console.error(err);
+    stopCastSound();
+    aiLoading.innerHTML = '<p class="muted small">지금은 리딩 메시지를 불러오지 못했어요. 잠시 후 다시 시도해주세요.</p>';
+  }
+}
+
+function renderResult(rune, question) {
+  document.getElementById('glyphEl').textContent = rune.glyph || '';
+  document.getElementById('runeNameEl').innerHTML = `${rune.name_ko} <span class="en">${rune.name_en}</span>`;
+  document.getElementById('runeKeywordEl').textContent = rune.keywords ? rune.keywords.split(',').slice(0, 3).join(' · ') : '';
+
+  askView.style.display = 'none';
+  loadingView.style.display = 'none';
+  resultView.style.display = 'block';
+
+  loadReading(rune, question);
+}
+
+askForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  if (!(await canDrawToday())) {
+    if (session) {
+      showToast('오늘의 무료 룬 뽑기를 모두 사용하셨어요.');
+      limitBoxMember.style.display = 'block';
+    } else {
+      showToast('비회원은 하루 1회만 무료로 이용하실 수 있어요.');
+      limitBoxAnon.style.display = 'block';
+    }
+    askView.style.display = 'none';
+    return;
+  }
+
+  const question = document.getElementById('questionText').value.trim();
+  askView.style.display = 'none';
+  loadingView.style.display = 'block';
+
+  let rune;
+  try {
+    rune = await pickRandomRune();
+  } catch (err) {
+    console.error(err);
+    showToast('룬 정보를 불러오지 못했어요. 잠시 후 다시 시도해주세요.');
+    loadingView.style.display = 'none';
+    askView.style.display = 'block';
+    return;
+  }
+
+  startCastSound();
+  currentRune = rune;
+  await recordDraw();
+
+  setTimeout(() => renderResult(rune, question), 500);
+});
+
+function resetToAskView() {
+  stopCastSound();
+  resultView.style.display = 'none';
+  limitBoxAnon.style.display = 'none';
+  limitBoxMember.style.display = 'none';
+  askView.style.display = 'block';
+  document.getElementById('questionText').value = '';
+}
+document.getElementById('backBtn').addEventListener('click', (e) => { e.preventDefault(); resetToAskView(); });
+document.getElementById('redrawBtn').addEventListener('click', resetToAskView);
+
+// ---------------------------------------------------------------------
+// 부적 이미지 다운로드 — draws a portrait talisman card to <canvas> and
+// triggers a PNG download. No server round trip; pure client-side render.
+// ---------------------------------------------------------------------
+function hexToRgba(hex, alpha) {
+  const h = hex.replace('#', '');
+  const r = parseInt(h.substring(0, 2), 16);
+  const g = parseInt(h.substring(2, 4), 16);
+  const b = parseInt(h.substring(4, 6), 16);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
+function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
+  const words = text.split('');
+  let line = '';
+  let curY = y;
+  for (const ch of words) {
+    const test = line + ch;
+    if (ctx.measureText(test).width > maxWidth && line) {
+      ctx.fillText(line, x, curY);
+      line = ch;
+      curY += lineHeight;
+    } else {
+      line = test;
+    }
+  }
+  if (line) ctx.fillText(line, x, curY);
+  return curY;
+}
+
+// Reads the rune's 재료(material)/새기는 법(engraving) text and picks a
+// gemstone accent color + ink color so the generated image visually
+// reflects them, instead of spelling them out as text on the image.
+const GEM_COLORS = [
+  ['마노', '#c98a4b'], ['카넬리안', '#cc5b32'], ['재스퍼', '#b3543f'],
+  ['라피스라줄리', '#2c4a7c'], ['로즈쿼츠', '#e8a7ab'], ['시트린', '#d9a441'],
+  ['문스톤', '#c9d6e3'], ['스모키쿼츠', '#6b5d52'], ['클리어쿼츠', '#e8e4da'],
+  ['수정', '#e8e4da'], ['타이거아이', '#a97142'], ['블러드스톤', '#35513f'],
+  ['자수정', '#7b5ea7'], ['아메시스트', '#7b5ea7'], ['에메랄드', '#2f6b4f'],
+  ['아벤츄린', '#6b9e78'], ['가넷', '#7d2d2d'], ['아쿠아마린', '#6fb3ac'],
+  ['페트리파이드우드', '#8a6748'], ['선스톤', '#d98a4a'],
+];
+const INK_COLORS = [
+  ['금박', '#b8860b'], ['금색', '#b8860b'], ['은색', '#8a8f99'],
+  ['붉은', '#a13a2e'], ['빨간', '#a13a2e'], ['짙은', '#3a322a'],
+  ['파랑', '#2c4a7c'], ['초록', '#2f6b4f'], ['갈색', '#6b4a2f'],
+];
+
+function deriveTalismanStyle(rune) {
+  const material = rune.talisman_material || '';
+  const engrave = rune.talisman_engrave || '';
+  const accent = GEM_COLORS.find(([kw]) => material.includes(kw));
+  const ink = INK_COLORS.find(([kw]) => engrave.includes(kw));
+  return {
+    accentColor: accent ? accent[1] : '#bc6338',
+    inkColor: ink ? ink[1] : '#9c4f2a',
+  };
+}
+
+async function drawTalismanImage(rune) {
+  const canvas = document.getElementById('talismanCanvas');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+
+  await document.fonts.ready;
+  const { accentColor, inkColor } = deriveTalismanStyle(rune);
+
+  // background — full-bleed vertical gradient sized for a phone wallpaper
+  // (1080×2400 ≈ 19.5:9, crops safely on most modern phone ratios).
+  const bg = ctx.createLinearGradient(0, 0, 0, H);
+  bg.addColorStop(0, '#faf8f5');
+  bg.addColorStop(0.55, '#f6f1e9');
+  bg.addColorStop(1, '#eee2cf');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, W, H);
+
+  // giant, very faint glyph watermark so the tall empty space reads as a
+  // designed wallpaper rather than a stretched card
+  if (rune.glyph) {
+    ctx.save();
+    ctx.globalAlpha = 0.05;
+    ctx.fillStyle = accentColor;
+    ctx.font = '1700px "Segoe UI Historic", "Noto Sans Runic", "Noto Sans Symbols2", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.translate(W / 2, H * 0.42);
+    ctx.rotate(-7 * Math.PI / 180);
+    ctx.fillText(rune.glyph, 0, 0);
+    ctx.restore();
+  }
+
+  // soft vignette for depth
+  const vign = ctx.createRadialGradient(W / 2, H * 0.42, H * 0.16, W / 2, H * 0.42, H * 0.62);
+  vign.addColorStop(0, 'rgba(38,33,29,0)');
+  vign.addColorStop(1, 'rgba(38,33,29,0.10)');
+  ctx.fillStyle = vign;
+  ctx.fillRect(0, 0, W, H);
+
+  // eyebrow — kept well below the top edge, clear of a phone's status bar/notch
+  ctx.fillStyle = '#bc6338';
+  ctx.font = '600 26px "Noto Sans KR", sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('O Z   R U N E   T A L I S M A N', W / 2, 220);
+
+  // medallion — a soft glow in the rune's gemstone color sits behind it,
+  // and its ring is drawn in that same color, so 재료(material) reads
+  // visually instead of as a text label. Placed above center so it stays
+  // clear of a phone's bottom dock/icons once set as wallpaper.
+  const cx = W / 2, cy = 980, r = 260;
+
+  const glow = ctx.createRadialGradient(cx, cy, r * 0.7, cx, cy, r * 1.4);
+  glow.addColorStop(0, hexToRgba(accentColor, 0.4));
+  glow.addColorStop(1, hexToRgba(accentColor, 0));
+  ctx.fillStyle = glow;
+  ctx.fillRect(cx - r * 1.6, cy - r * 1.6, r * 3.2, r * 3.2);
+
+  const medGrad = ctx.createRadialGradient(cx - 48, cy - 72, 24, cx, cy, r);
+  medGrad.addColorStop(0, '#ffffff');
+  medGrad.addColorStop(1, '#e7dcc9');
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.fillStyle = medGrad;
+  ctx.fill();
+  ctx.strokeStyle = accentColor;
+  ctx.lineWidth = 6;
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.arc(cx, cy, r * 0.86, 0, Math.PI * 2);
+  ctx.strokeStyle = hexToRgba(accentColor, 0.55);
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  if (rune.glyph) {
+    ctx.fillStyle = inkColor;
+    ctx.font = '300px "Segoe UI Historic", "Noto Sans Runic", "Noto Sans Symbols2", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(rune.glyph, cx, cy + 16);
+    ctx.textBaseline = 'alphabetic';
+  }
+
+  // name
+  let y = cy + r + 130;
+  ctx.fillStyle = '#26211d';
+  ctx.font = '300 66px "Noto Serif KR", serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(rune.name_ko, W / 2, y);
+  y += 46;
+  ctx.fillStyle = '#8c8479';
+  ctx.font = '400 28px "Noto Sans KR", sans-serif';
+  ctx.fillText(rune.name_en.toUpperCase(), W / 2, y);
+
+  // divider
+  y += 50;
+  ctx.strokeStyle = 'rgba(45,37,30,0.2)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(W / 2 - 70, y);
+  ctx.lineTo(W / 2 + 70, y);
+  ctx.stroke();
+
+  // mantra
+  y += 70;
+  if (rune.mantra) {
+    ctx.fillStyle = '#9c4f2a';
+    ctx.font = 'italic 300 36px "Noto Serif KR", serif';
+    ctx.textAlign = 'center';
+    y = wrapText(ctx, `"${rune.mantra}"`, W / 2, y, W - 260, 50);
+  }
+
+  // 지니는 법 — 재료/새기는 법은 위 메달리온의 색(보석)과 잉크색(새기는 법)
+  // 으로 이미 시각적으로 표현되었으므로, 텍스트로는 지니는 법만 안내한다.
+  y += 100;
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#8c8479';
+  ctx.font = '600 24px "Noto Sans KR", sans-serif';
+  ctx.fillText('지 니 는   법', W / 2, y);
+  y += 54;
+  ctx.fillStyle = '#26211d';
+  ctx.font = '400 30px "Noto Sans KR", sans-serif';
+  wrapText(ctx, rune.talisman_carry || '-', W / 2, y, W - 280, 44);
+
+  // brand footer — pinned near the bottom regardless of how much text ran
+  // above, but kept clear of a phone's home-indicator/dock area
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#bc6338';
+  ctx.font = '600 26px "Noto Serif KR", serif';
+  ctx.fillText('OZ 룬타로 · 오늘의 부적', W / 2, H - 140);
+
+  ctx.strokeStyle = 'rgba(45,37,30,0.15)';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(36, 36, W - 72, H - 72);
+
+  return canvas.toDataURL('image/png');
+}
+
+const DOWNLOAD_BTN_LABEL = '📱 부적 배경화면 다운로드';
+
+document.getElementById('downloadBtn').addEventListener('click', async () => {
+  if (!currentRune) return;
+  const btn = document.getElementById('downloadBtn');
+
+  // 부적 배경화면 다운로드는 프리미엄 구독 전용 — 룬 뽑기 자체는 무료(1회/일)
+  // 지만, 다운로드는 구독 여부를 다시 한번 확인한다.
+  if (!isSubscribed(member)) {
+    showToast('부적 배경화면 다운로드는 프리미엄 구독 회원 전용이에요.');
+    setTimeout(() => { window.location.href = '/subscribe.html'; }, 900);
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = '이미지 만드는 중...';
+  try {
+    const dataUrl = await drawTalismanImage(currentRune);
+    const a = document.createElement('a');
+    a.href = dataUrl;
+    a.download = `oz-rune-wallpaper-${currentRune.name_en.toLowerCase()}.png`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    showToast('부적 배경화면을 다운로드했어요 ✓');
+  } catch (err) {
+    console.error(err);
+    showToast('이미지 생성에 실패했어요.');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = DOWNLOAD_BTN_LABEL;
+  }
+});
+</script>
+</body>
+</html>

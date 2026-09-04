@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>OZ 룬타로 · 프리미엄 룬</title>
+<link rel="stylesheet" href="/css/style.css"/>
+<link rel="manifest" href="/manifest.json"/>
+<meta name="theme-color" content="#bc6338"/>
+<link rel="icon" href="/icons/icon-192.png"/>
+<style>
+  .hero { text-align: center; padding: 10px 0 6px; }
+  .hero-eyebrow { font-size: 10.5px; letter-spacing: 5px; color: var(--primary); font-weight: 600; text-transform: uppercase; }
+  .hero h1 { font-size: 20px; line-height: 1.5; margin-top: 8px; }
+
+  .subscribe-box {
+    text-align: center; padding: 22px; background: var(--secondary); border-radius: 16px; margin-top: 20px;
+  }
+  .subscribe-box .ic { font-size: 22px; margin-bottom: 10px; }
+  .subscribe-box p { font-size: 13.5px; line-height: 1.6; }
+  .subscribe-box .price { font-size: 22px; font-weight: 600; color: var(--primary-dark); margin: 10px 0; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a href="/index.html" class="brand">OZ <span>ᚱ</span> 룬타로</a>
+  <div class="topbar-actions">
+    <span class="badge badge-free" id="roleBadge">불러오는 중</span>
+  </div>
+</div>
+
+<div class="container">
+  <div class="hero">
+    <div class="hero-eyebrow">Premium Reading</div>
+    <h1>삶의 네 영역, 깊이 있는 룬 리딩</h1>
+    <p class="muted small mt-8">애정 · 주식 · 부동산 · 건강 — 구독하시면 네 영역 모두 무제한으로 만나보실 수 있어요.</p>
+  </div>
+
+  <div class="premium-grid">
+    <a class="premium-card" href="/love.html">
+      <span class="lock-tag" id="lockLove" style="display:none;">🔒 구독</span>
+      <div class="ic">💗</div>
+      <div class="title">애정룬</div>
+      <div class="desc">연애 · 관계 · 결혼운</div>
+    </a>
+    <a class="premium-card" href="/stock.html">
+      <span class="lock-tag" id="lockStock" style="display:none;">🔒 구독</span>
+      <div class="ic">📈</div>
+      <div class="title">주식룬</div>
+      <div class="desc">매매 타이밍 · 투자운</div>
+    </a>
+    <a class="premium-card" href="/realestate.html">
+      <span class="lock-tag" id="lockRealestate" style="display:none;">🔒 구독</span>
+      <div class="ic">🏠</div>
+      <div class="title">부동산룬</div>
+      <div class="desc">매매 · 이사 · 계약운</div>
+    </a>
+    <a class="premium-card" href="/health.html">
+      <span class="lock-tag" id="lockHealth" style="display:none;">🔒 구독</span>
+      <div class="ic">🌿</div>
+      <div class="title">건강룬</div>
+      <div class="desc">몸과 마음의 상태</div>
+    </a>
+  </div>
+
+  <div class="subscribe-box" id="subscribeBox">
+    <div class="ic">ᚱ ✦ ᛟ</div>
+    <p><strong>프리미엄 룬 묶음 구독</strong></p>
+    <div class="price">4개 카테고리 무제한</div>
+    <p class="muted small">애정 · 주식 · 부동산 · 건강 룬을 하나의 구독으로 모두 이용하실 수 있어요.</p>
+    <a href="/subscribe.html" class="btn btn-primary mt-16" id="subscribeLink">구독 안내 보기</a>
+  </div>
+</div>
+
+<script type="module">
+import { getSession, getMember, renderBottomNav, isSubscribed, isTWA } from '/js/app.js';
+
+renderBottomNav('/premium.html');
+
+if (isTWA()) {
+  document.getElementById('subscribeLink').style.display = 'none';
+}
+
+async function refresh() {
+  const roleBadge = document.getElementById('roleBadge');
+  const session = await getSession();
+  if (!session) {
+    roleBadge.textContent = '비로그인';
+    roleBadge.className = 'badge badge-free';
+    lockAll(true);
+    return;
+  }
+  const member = await getMember(session);
+  if (isSubscribed(member)) {
+    roleBadge.textContent = '✦ 프리미엄 구독중';
+    roleBadge.className = 'badge badge-active';
+    lockAll(false);
+    document.getElementById('subscribeBox').style.display = 'none';
+  } else {
+    roleBadge.textContent = '무료 회원';
+    roleBadge.className = 'badge badge-free';
+    lockAll(true);
+  }
+}
+
+function lockAll(locked) {
+  ['lockLove', 'lockStock', 'lockRealestate', 'lockHealth'].forEach(id => {
+    document.getElementById(id).style.display = locked ? 'inline-flex' : 'none';
+  });
+}
+
+refresh();
+</script>
+</body>
+</html>
