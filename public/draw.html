@@ -249,7 +249,12 @@ async function recordDraw() {
     }).eq('member_id', session.user.id).eq('app_key', APP_KEY);
     member.daily_reading_count = newCount;
     member.daily_reading_reset_date = today();
-  } else if (!session) {
+  } else if (!isSubscribed(member)) {
+    // Falls back to the same localStorage counter canDrawToday() reads
+    // whenever the account-based path above didn't apply — not just for
+    // anonymous visitors, but also if a logged-in session's member row
+    // failed to load. Recording nothing here would silently defeat the
+    // daily limit for that whole case.
     const raw = localStorage.getItem('rt_free_draw');
     const cur = raw ? JSON.parse(raw) : { date: today(), count: 0 };
     const count = cur.date === today() ? cur.count + 1 : 1;

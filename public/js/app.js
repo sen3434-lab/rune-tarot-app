@@ -140,8 +140,8 @@ export function showToast(msg, ms = 2200) {
 
 const NAV_ITEMS = [
   { href: '/index.html', ic: '\u{1FAA8}', label: '홈' },
-  { href: '/draw.html', ic: '\u{1F52E}', label: '룬 뽑기' },
   { href: '/daily.html', ic: '\u{2600}\u{FE0F}', label: '오늘의 룬' },
+  { href: '/draw.html', ic: '\u{1F52E}', label: '룬 뽑기' },
   { href: '/premium.html', ic: '\u{2728}', label: '프리미엄' },
   { href: '/settings.html', ic: '\u{2699}\u{FE0F}', label: '설정' },
 ];
