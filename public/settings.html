@@ -48,6 +48,7 @@
           <button class="btn btn-outline btn-sm" id="saveNameBtn">저장</button>
         </span>
       </div>
+      <div class="row"><span class="rl">등급</span><span id="rowRole"></span></div>
       <div class="row"><span class="rl">프리미엄 구독</span><span id="rowSub"></span></div>
       <div class="row"><span class="rl">가입일</span><span id="rowJoined"></span></div>
     </div>
@@ -55,6 +56,10 @@
     <div id="generalSection">
       <div class="section-label">일반</div>
       <div class="card mb-24">
+        <div class="row" id="rowVerify">
+          <span class="rl">수강생 인증</span>
+          <a href="/verify-student.html" class="btn btn-outline btn-sm">인증하기</a>
+        </div>
         <div class="row" id="rowSubscribe">
           <span class="rl">프리미엄 구독 관리</span>
           <a href="/subscribe.html" class="btn btn-outline btn-sm">보기</a>
@@ -88,14 +93,18 @@ async function init() {
 
   document.getElementById('nameInput').value = member.display_name || '';
 
+  const isStudent = member.role === 'student';
   const subscribed = isSubscribed(member);
-  document.getElementById('roleBadge').textContent = subscribed ? '✦ 프리미엄 구독중' : '무료 회원';
-  document.getElementById('roleBadge').className = 'badge mt-8 ' + (subscribed ? 'badge-active' : 'badge-free');
+  const roleLabel = isStudent ? '🎓 수강생' : (subscribed ? '✦ 프리미엄 구독중' : '무료 회원');
+  document.getElementById('roleBadge').textContent = roleLabel;
+  document.getElementById('roleBadge').className = 'badge mt-8 ' + (isStudent ? 'badge-student' : (subscribed ? 'badge-active' : 'badge-free'));
+  document.getElementById('rowRole').textContent = isStudent ? '🎓 수강생 (룬 뽑기 무제한)' : '일반 회원';
 
   const subLabel = { free: '무료', active: '구독중', expired: '만료됨' }[member.subscription_status] || member.subscription_status;
   document.getElementById('rowSub').textContent = subLabel;
   document.getElementById('rowJoined').textContent = member.created_at ? fmtDate(member.created_at) : '-';
 
+  document.getElementById('rowVerify').style.display = isStudent ? 'none' : 'flex';
   document.getElementById('rowSubscribe').style.display = subscribed ? 'none' : 'flex';
 }
 init();
