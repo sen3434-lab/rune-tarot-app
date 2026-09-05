@@ -149,7 +149,7 @@
 <canvas id="talismanCanvas" width="1080" height="2400" style="display:none;"></canvas>
 
 <script type="module">
-import { getSb, getSession, getMember, renderBottomNav, showToast, isSubscribed, APP_KEY } from '/js/app.js';
+import { getSb, getSession, getMember, renderBottomNav, showToast, isSubscribed, hasUnlimitedDraws, APP_KEY } from '/js/app.js';
 import { getRunes } from '/js/runes.js';
 import { startCastSound, stopCastSound } from '/js/castSound.js';
 import { pickRandomQuestions } from '/js/questionPrompts.js';
@@ -222,12 +222,13 @@ async function pickRandomRune() {
 
 // 룬 뽑기는 비구독 사용자에게 하루 1회 무료 — 로그인 시 enrollments의
 // daily_reading_count/reset_date, 비로그인 시 localStorage로 추적한다.
-// (구독 회원은 무제한.) 부적 배경화면 다운로드는 별도로 구독 전용이다.
+// (수강생이거나 프리미엄 결제 회원이면 무제한.) 부적 배경화면 다운로드는
+// 별도로 결제 회원 전용이다(수강생 무료 대상 아님).
 const today = () => new Date().toISOString().slice(0, 10);
 
 async function canDrawToday() {
   if (session && member) {
-    if (isSubscribed(member)) return true;
+    if (hasUnlimitedDraws(member)) return true;
     if (member.daily_reading_reset_date !== today()) return true;
     return member.daily_reading_count < 1;
   }
@@ -239,7 +240,7 @@ async function canDrawToday() {
 }
 
 async function recordDraw() {
-  if (session && member && !isSubscribed(member)) {
+  if (session && member && !hasUnlimitedDraws(member)) {
     const sb = await getSb();
     const resetToday = member.daily_reading_reset_date === today();
     const newCount = resetToday ? member.daily_reading_count + 1 : 1;
@@ -249,7 +250,7 @@ async function recordDraw() {
     }).eq('member_id', session.user.id).eq('app_key', APP_KEY);
     member.daily_reading_count = newCount;
     member.daily_reading_reset_date = today();
-  } else if (!isSubscribed(member)) {
+  } else if (!hasUnlimitedDraws(member)) {
     // Falls back to the same localStorage counter canDrawToday() reads
     // whenever the account-based path above didn't apply — not just for
     // anonymous visitors, but also if a logged-in session's member row

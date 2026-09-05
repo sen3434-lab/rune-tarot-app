@@ -95,6 +95,15 @@ export async function ensureMemberRow(session, nickname) {
       return null;
     }
     enrollment = created;
+  } else if (enrollment.role !== 'student') {
+    // Only worth the extra round trip if they're not already a student —
+    // once promoted there's nothing left to recheck. Matches
+    // color-tarot-app's behavior: someone added to the roster after they
+    // first signed up gets upgraded on their next visit.
+    const { data: isStudent } = await sb.rpc('recheck_student_status', { p_app_key: APP_KEY });
+    if (isStudent) {
+      enrollment = { ...enrollment, role: 'student' };
+    }
   }
 
   return {
@@ -117,6 +126,13 @@ export async function getMember(session, nickname) {
 
 export function isSubscribed(member) {
   return !!member && member.subscription_status === 'active';
+}
+
+// 룬 뽑기 하루 1회 제한의 예외 — 수강생이거나 프리미엄 결제 회원이면 무제한.
+// (프리미엄 4개 카테고리 자체는 결제 회원 전용이라 isSubscribed()만 쓴다 —
+// 수강생이라고 해서 프리미엄까지 자동으로 열리는 건 아니다.)
+export function hasUnlimitedDraws(member) {
+  return !!member && (member.role === 'student' || member.subscription_status === 'active');
 }
 
 export async function signOut() {

@@ -69,18 +69,17 @@
     </div>
   </div>
 
+  <!-- 결제 라인은 스토어 심사 전까지 임시로 뺐습니다. 재활성화하려면 아래
+       .plan 블록을 원래대로(가격 + 구매 버튼) 되돌리고 subscribeBtn 관련
+       스크립트를 다시 넣으면 됩니다. -->
   <div id="planSection">
     <div class="plan">
-      <div class="serif" style="font-size:15px;">프리미엄 룬 평생 이용권</div>
-      <div class="price">₩9,900<small> 1회 결제</small></div>
+      <div class="serif" style="font-size:15px;">프리미엄 룬 이용권</div>
       <ul>
         <li>애정 · 주식 · 부동산 · 건강 룬 무제한</li>
         <li>각 영역별 개인 맞춤 질문 리딩</li>
-        <li>평생 재결제 없음</li>
       </ul>
-      <button class="btn btn-primary btn-block" id="subscribeBtn">프리미엄 이용권 구매하기</button>
-      <p class="small muted center mt-8" id="twaNote" style="display:none;">앱 결제는 준비 중이에요.<br/>웹에서 구매하실 수 있어요.</p>
-      <p class="small muted center mt-16" id="subNote"></p>
+      <p class="small muted center mt-16">준비 중이에요. 곧 만나보실 수 있어요.</p>
     </div>
   </div>
 
@@ -105,13 +104,8 @@
 </div>
 
 <script type="module">
-import { renderBottomNav, getSession, getMember, showToast, isTWA, isSubscribed } from '/js/app.js';
+import { renderBottomNav, getSession, getMember, isSubscribed } from '/js/app.js';
 renderBottomNav('/premium.html');
-
-if (isTWA()) {
-  document.getElementById('subscribeBtn').style.display = 'none';
-  document.getElementById('twaNote').style.display = 'block';
-}
 
 async function reflectMemberStatus() {
   const session = await getSession();
@@ -125,16 +119,6 @@ async function reflectMemberStatus() {
   }
 }
 reflectMemberStatus();
-
-document.getElementById('subscribeBtn').addEventListener('click', async () => {
-  const session = await getSession();
-  if (!session) {
-    showToast('구매는 로그인 후 이용하실 수 있어요.');
-    setTimeout(() => window.location.href = '/auth.html', 900);
-    return;
-  }
-  document.getElementById('subNote').textContent = '💳 결제 연동은 준비 중입니다 (placeholder) — 실제 서비스에서는 PG사 결제창이 연결됩니다.';
-});
 </script>
 </body>
 </html>
