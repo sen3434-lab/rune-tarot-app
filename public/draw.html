@@ -126,18 +126,21 @@
         <p id="readingText"></p>
       </div>
 
-      <div class="talisman-card">
+      <div class="result-actions">
+        <button class="btn btn-outline" id="showTalismanBtn">🪬 부적 보기</button>
+        <button class="btn btn-primary" id="redrawBtn">새 룬 뽑기</button>
+      </div>
+
+      <div class="talisman-card" id="talismanCard" style="display:none;">
         <div class="talisman-head">🪬 이 룬의 부적</div>
         <div class="talisman-body">
           <div class="talisman-row"><div class="tl">지니는 법</div><div class="tv" id="tlCarry"></div></div>
         </div>
         <div class="mantra-line" id="tlMantra"></div>
+        <div style="padding: 0 16px 16px;">
+          <button class="btn btn-primary btn-block" id="downloadBtn">📱 부적 배경화면 이미지로 다운로드</button>
+        </div>
       </div>
-    </div>
-
-    <div class="result-actions">
-      <button class="btn btn-outline" id="downloadBtn">📱 부적 배경화면 다운로드</button>
-      <button class="btn btn-primary" id="redrawBtn">새 룬 뽑기</button>
     </div>
   </div>
 
@@ -172,7 +175,7 @@ let selectedQuestion = null;
   session = await getSession();
   if (session) member = await getMember(session);
   if (!isSubscribed(member)) {
-    document.getElementById('downloadBtn').textContent = '🔒 배경화면 다운로드 (프리미엄)';
+    document.getElementById('showTalismanBtn').textContent = '🔒 부적 보기 (프리미엄)';
   }
 })();
 
@@ -290,6 +293,11 @@ function renderResult(rune, question) {
   document.getElementById('glyphEl').textContent = rune.glyph || '';
   document.getElementById('runeNameEl').innerHTML = `${rune.name_ko} <span class="en">${rune.name_en}</span>`;
   document.getElementById('runeKeywordEl').textContent = rune.keywords ? rune.keywords.split(',').slice(0, 3).join(' · ') : '';
+
+  document.getElementById('talismanCard').style.display = 'none';
+  const showTalismanBtn = document.getElementById('showTalismanBtn');
+  showTalismanBtn.style.display = 'inline-flex';
+  showTalismanBtn.textContent = isSubscribed(member) ? SHOW_TALISMAN_BTN_LABEL : '🔒 부적 보기 (프리미엄)';
 
   askView.style.display = 'none';
   loadingView.style.display = 'none';
@@ -545,14 +553,30 @@ async function drawTalismanImage(rune) {
   return canvas.toDataURL('image/png');
 }
 
-const DOWNLOAD_BTN_LABEL = '📱 부적 배경화면 다운로드';
+const DOWNLOAD_BTN_LABEL = '📱 부적 배경화면 이미지로 다운로드';
+const SHOW_TALISMAN_BTN_LABEL = '🪬 부적 보기';
+
+// 부적 사용법 + 이미지 다운로드는 프리미엄 구독 전용 — 룬 뽑기 자체는
+// 무료(1회/일)지만, "부적 보기" 클릭 시 구독 여부를 다시 한번 확인한다.
+// 통과하면 사용법(지니는 법·만트라)이 담긴 카드가 열리고, 그 안의 버튼으로
+// 실제 배경화면 이미지를 다운로드할 수 있다.
+document.getElementById('showTalismanBtn').addEventListener('click', () => {
+  if (!currentRune) return;
+
+  if (!isSubscribed(member)) {
+    showToast('부적은 프리미엄 구독 회원 전용이에요.');
+    setTimeout(() => { window.location.href = '/subscribe.html'; }, 900);
+    return;
+  }
+
+  document.getElementById('talismanCard').style.display = 'block';
+  document.getElementById('showTalismanBtn').style.display = 'none';
+});
 
 document.getElementById('downloadBtn').addEventListener('click', async () => {
   if (!currentRune) return;
   const btn = document.getElementById('downloadBtn');
 
-  // 부적 배경화면 다운로드는 프리미엄 구독 전용 — 룬 뽑기 자체는 무료(1회/일)
-  // 지만, 다운로드는 구독 여부를 다시 한번 확인한다.
   if (!isSubscribed(member)) {
     showToast('부적 배경화면 다운로드는 프리미엄 구독 회원 전용이에요.');
     setTimeout(() => { window.location.href = '/subscribe.html'; }, 900);
