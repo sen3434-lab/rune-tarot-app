@@ -3,7 +3,12 @@ const express = require('express');
 const path = require('path');
 const { createClient } = require('@supabase/supabase-js');
 
+const { createLimiter } = require('./rate-limit');
+
 const app = express();
+// nginx sits in front and sets X-Forwarded-For; without this every visitor
+// would look like 127.0.0.1 and share one rate-limit bucket.
+app.set('trust proxy', 1);
 const PORT = process.env.PORT || 3001;
 const APP_KEY = 'rune-tarot';
 
@@ -131,7 +136,7 @@ async function callGemini(systemPrompt, userPrompt) {
 // ---------------------------------------------------------------------
 // POST /api/reading — single-rune draw, free. Used by draw.html (룬 뽑기).
 // ---------------------------------------------------------------------
-app.post('/api/reading', async (req, res) => {
+app.post('/api/reading', createLimiter(), async (req, res) => {
   const { id, question, displayName } = req.body || {};
   const rune = await findRune(id);
   if (!rune) return res.status(400).json({ error: 'unknown rune' });
