@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>OZ 룬타로 · 주식룬</title>
+<title>OZ 룬타로 · 재물룬</title>
 <link rel="stylesheet" href="/css/style.css"/>
 <link rel="manifest" href="/manifest.json"/>
 <meta name="theme-color" content="#bc6338"/>
@@ -14,7 +14,9 @@
 <div class="topbar">
   <a href="/index.html" class="brand">OZ <span>ᚱ</span> 룬타로</a>
   <div class="topbar-actions">
+    <a href="/coins.html" class="icon-btn" id="coinBadge" style="font-weight:600;color:var(--primary-dark);">🪙</a>
     <a href="/premium.html" class="icon-btn">✨ 프리미엄</a>
+    <a href="/settings.html" class="icon-btn">계정</a>
   </div>
 </div>
 
@@ -22,8 +24,8 @@
 
   <div class="category-hero">
     <div class="ic" id="categoryIcon"></div>
-    <h1>주식룬 <span id="categoryLabel" style="display:none;"></span></h1>
-    <p class="muted small mt-8">지금이 사고팔 때인지, 룬에게 물어보세요.</p>
+    <h1>재물룬 <span id="categoryLabel" style="display:none;"></span></h1>
+    <p class="muted small mt-8">돈을 대하는 지금 내 마음, 룬에게 비춰보세요.</p>
   </div>
 
   <div id="gateView" class="gate-box" style="display:none;">
@@ -52,14 +54,13 @@
         <div class="cast-stone s2">ᛖ</div>
         <div class="cast-stone s3">ᛗ</div>
       </div>
-      <p class="cast-label">룬이 주식룬을 들여다보고 있어요...</p>
+      <p class="cast-label">룬이 재물룬을 들여다보고 있어요...</p>
     </div>
   </div>
 
   <div id="resultView" style="display:none;">
     <div class="rune-medallion mt-24" id="medallion"><div class="glyph" id="glyphEl"></div></div>
     <div class="rune-name" id="runeNameEl"></div>
-    <div class="center"><span class="orientation-tag" id="orientationTag" style="display:inline-block; margin-top:10px; font-size:11.5px; padding:4px 12px; border-radius:999px; background:var(--secondary); color:var(--primary-dark); font-weight:600;"></span></div>
 
     <div class="section-label mt-24">리딩</div>
     <div class="card reading-box">
@@ -82,9 +83,10 @@
 import { initPremiumPage } from '/js/premium.js';
 initPremiumPage({
   category: 'stock',
-  label: '주식룬',
-  icon: '📈',
-  placeholder: '예: 보유 중인 종목을 지금 정리해야 할지 고민이에요.',
+  label: '재물룬',
+  icon: '💰',
+  placeholder: '예: 요즘 돈 문제로 마음이 조급해요. 어떤 마음으로 지켜보면 좋을까요?',
+  disclaimer: '재물룬은 룬의 상징으로 돈을 대하는 마음을 비춰보는 이야기예요. 특정 종목·코인에 대한 정보나 매수·매도 조언, 수익 예측은 하지 않아요. 투자 판단과 책임은 본인에게 있어요.',
   navActive: '/stock.html',
 });
 </script>

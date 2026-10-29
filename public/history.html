@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>OZ 룬타로 · 기록</title>
+<link rel="stylesheet" href="/css/style.css"/>
+<link rel="manifest" href="/manifest.json"/>
+<meta name="theme-color" content="#bc6338"/>
+<link rel="icon" href="/icons/icon-192.png"/>
+<link rel="apple-touch-icon" href="/icons/icon-192.png"/>
+<style>
+  .month-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+  .month-nav .m-title { font-size: 17px; font-family:'Noto Serif KR',serif; }
+  .month-nav button { background: var(--card); border: 0.8px solid var(--border); border-radius: 50%; width: 32px; height: 32px; font-size: 14px; }
+
+  .stats-row { display: flex; gap: 10px; margin-bottom: 20px; }
+  .stat { flex: 1; background: var(--card); border: 0.8px solid var(--border); border-radius: 12px; padding: 12px; text-align: center; }
+  .stat .n { font-size: 19px; font-weight: 600; color: var(--primary-dark); }
+  .stat .l { font-size: 11px; color: var(--muted-foreground); margin-top: 2px; }
+
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin-bottom: 26px; }
+  .cal-dow { text-align: center; font-size: 10.5px; color: var(--muted-foreground); padding-bottom: 4px; }
+  .cal-cell { aspect-ratio: 1; border-radius: 10px; background: var(--card); border: 0.8px solid var(--border); display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 11px; position: relative; }
+  .cal-cell.empty { background: transparent; border: none; }
+  .cal-cell .d { font-size: 10px; color: var(--muted-foreground); position: absolute; top: 4px; left: 6px; }
+  .cal-cell.has-reading { background: rgba(188,99,56,.08); border-color: rgba(188,99,56,.35); }
+  .cal-cell .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--primary); margin-top: 6px; }
+
+  .hist-item { border-bottom: 0.8px solid var(--border); padding: 14px 0; }
+  .hist-head { display: flex; gap: 12px; align-items: center; }
+  .hist-glyphs { display: flex; gap: 6px; flex-shrink: 0; }
+  .hist-glyph { width: 40px; height: 40px; border-radius: 50%; background: var(--secondary); display: flex; align-items: center; justify-content: center; font-size: 20px; color: var(--primary-dark); }
+  .hist-body { flex: 1; min-width: 0; }
+  .hist-date { font-size: 11px; color: var(--muted-foreground); }
+  .hist-name { font-size: 14px; font-weight: 600; margin-top: 2px; }
+  .hist-q { font-size: 12.5px; color: var(--foreground); margin-top: 3px; }
+  .type-tag { display: inline-block; font-size: 10.5px; padding: 2px 8px; border-radius: 999px; background: var(--secondary); color: var(--primary-dark); font-weight: 600; margin-right: 6px; }
+  details.hist-detail { margin-top: 10px; }
+  details.hist-detail summary { cursor: pointer; font-size: 12.5px; color: var(--primary-dark); font-weight: 600; list-style: none; }
+  details.hist-detail summary::-webkit-details-marker { display: none; }
+  .hist-reading { margin-top: 10px; padding: 14px; background: var(--card); border: 0.8px solid var(--border); border-radius: 12px; }
+  .hist-reading p { font-size: 13.5px; line-height: 1.85; white-space: pre-wrap; }
+  .hist-reading .one { font-weight: 600; color: var(--primary-dark); margin-bottom: 8px; }
+  .hist-reading .caut { margin-top: 10px; padding-top: 10px; border-top: 0.8px dashed var(--border); font-size: 12.5px; color: var(--muted-foreground); }
+  .note { font-size: 11.5px; color: var(--muted-foreground); text-align: center; margin-top: 18px; line-height: 1.7; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a href="/index.html" class="brand">OZ <span>ᚱ</span> 룬타로</a>
+  <div class="topbar-actions">
+    <a href="/coins.html" class="icon-btn" id="coinBadge" style="font-weight:600;color:var(--primary-dark);">🪙</a>
+    <a href="/settings.html" class="icon-btn">계정</a>
+  </div>
+</div>
+
+<div class="container">
+  <div id="gate" style="display:none;" class="empty-state">
+    <div class="ic">🔒</div>
+    <p>기록은 로그인 후 확인하실 수 있어요.</p>
+    <a href="/auth.html" class="btn btn-primary mt-16">로그인 하기</a>
+  </div>
+
+  <div id="content" style="display:none;">
+    <div class="month-nav">
+      <button id="prevM">‹</button>
+      <div class="m-title" id="mTitle"></div>
+      <button id="nextM">›</button>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat"><div class="n" id="statCount">0</div><div class="l">이번 달 풀이</div></div>
+      <div class="stat"><div class="n" id="statTop">-</div><div class="l">가장 많이 나온 룬</div></div>
+    </div>
+
+    <div class="cal-grid" id="calGrid"></div>
+
+    <div class="section-label">풀이 기록</div>
+    <div id="histList"></div>
+    <div id="emptyList" class="empty-state" style="display:none;">
+      <div class="ic">ᚱ</div>
+      <p>이번 달 기록이 아직 없어요.</p>
+    </div>
+    <p class="note">코인으로 열어본 풀이는 이곳에 저장되어 언제든 다시 볼 수 있어요.<br/>삭제가 필요하면 설정의 회원 탈퇴 문의로 요청해 주세요.</p>
+  </div>
+</div>
+
+<script type="module">
+import { getSb, getSession, fmtDate, showToast, renderBottomNav, claimFreeCoins, renderCoinBadge, APP_KEY } from '/js/app.js';
+
+renderBottomNav('/history.html');
+
+const CATEGORY_LABEL = { love: '애정룬', stock: '재물룬', realestate: '주거룬', health: '건강룬' };
+
+let cursor = new Date();
+cursor.setDate(1);
+
+// textContent-safe: escape anything that came from the user or the AI
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+function parseMemo(memo) {
+  if (!memo) return {};
+  try { const m = JSON.parse(memo); return m && typeof m === 'object' ? m : {}; } catch { return {}; }
+}
+
+function typeLabel(m) {
+  if (m.type === 'daily') return '오늘의 룬';
+  if (m.type === 'premium') return '프리미엄 · ' + (CATEGORY_LABEL[m.category] || '룬');
+  return '룬 뽑기';
+}
+
+async function init() {
+  const session = await getSession();
+  if (!session) {
+    document.getElementById('gate').style.display = 'block';
+    await renderCoinBadge(document.getElementById('coinBadge'));
+    return;
+  }
+  document.getElementById('content').style.display = 'block';
+  await claimFreeCoins(session);
+  await renderCoinBadge(document.getElementById('coinBadge'));
+  await loadMonth(session);
+
+  document.getElementById('prevM').addEventListener('click', () => { cursor.setMonth(cursor.getMonth() - 1); loadMonth(session); });
+  document.getElementById('nextM').addEventListener('click', () => { cursor.setMonth(cursor.getMonth() + 1); loadMonth(session); });
+}
+
+async function loadMonth(session) {
+  const sb = await getSb();
+  const year = cursor.getFullYear();
+  const month = cursor.getMonth();
+  document.getElementById('mTitle').textContent = `${year}년 ${month + 1}월`;
+
+  const startISO = new Date(year, month, 1).toISOString();
+  const endISO = new Date(year, month + 1, 1).toISOString();
+
+  const { data, error } = await sb
+    .from('readings')
+    .select('id, mood_input, memo, created_at, card_id, tarot_cards(id, name, name_ko, glyph, keyword)')
+    .eq('user_id', session.user.id)
+    .eq('app_key', APP_KEY)
+    .gte('created_at', startISO)
+    .lt('created_at', endISO)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error(error);
+    showToast('기록을 불러오지 못했어요.');
+    return;
+  }
+  const rows = data || [];
+  renderStats(rows);
+  renderCalendar(year, month, rows);
+  renderList(rows);
+}
+
+function runeNameOf(r) {
+  const c = r.tarot_cards || {};
+  return c.name_ko || c.name || '';
+}
+
+function renderStats(rows) {
+  document.getElementById('statCount').textContent = rows.length;
+  const freq = {};
+  rows.forEach((r) => { const n = runeNameOf(r); if (n) freq[n] = (freq[n] || 0) + 1; });
+  const top = Object.entries(freq).sort((a, b) => b[1] - a[1])[0];
+  document.getElementById('statTop').textContent = top ? top[0] : '-';
+}
+
+function renderCalendar(year, month, rows) {
+  const grid = document.getElementById('calGrid');
+  grid.innerHTML = '';
+  ['일', '월', '화', '수', '목', '금', '토'].forEach((d) => {
+    const el = document.createElement('div');
+    el.className = 'cal-dow';
+    el.textContent = d;
+    grid.appendChild(el);
+  });
+  const byDay = {};
+  rows.forEach((r) => { const d = new Date(r.created_at).getDate(); (byDay[d] = byDay[d] || []).push(r); });
+  const firstDow = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  for (let i = 0; i < firstDow; i++) {
+    const el = document.createElement('div');
+    el.className = 'cal-cell empty';
+    grid.appendChild(el);
+  }
+  for (let day = 1; day <= daysInMonth; day++) {
+    const el = document.createElement('div');
+    const has = byDay[day];
+    el.className = 'cal-cell' + (has ? ' has-reading' : '');
+    el.innerHTML = `<span class="d">${day}</span>` + (has ? '<span class="dot"></span>' : '');
+    grid.appendChild(el);
+  }
+}
+
+function renderList(rows) {
+  const list = document.getElementById('histList');
+  const empty = document.getElementById('emptyList');
+  list.innerHTML = '';
+  if (!rows.length) { empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+
+  rows.forEach((r) => {
+    const m = parseMemo(r.memo);
+    const card = r.tarot_cards || {};
+    const runes = m.type === 'daily' && Array.isArray(m.runes) && m.runes.length ? m.runes : [{ glyph: card.glyph, name_ko: runeNameOf(r) }];
+    const glyphs = runes.map((x) => `<div class="hist-glyph">${esc(x.glyph || 'ᚱ')}</div>`).join('');
+    const names = m.type === 'daily' ? runes.map((x) => esc(x.name_ko)).join(' · ') : esc(runeNameOf(r));
+    const question = m.type === 'daily' ? '' : (r.mood_input ? `“${esc(r.mood_input)}”` : '');
+
+    const item = document.createElement('div');
+    item.className = 'hist-item';
+    item.innerHTML = `
+      <div class="hist-head">
+        <div class="hist-glyphs">${glyphs}</div>
+        <div class="hist-body">
+          <div class="hist-date"><span class="type-tag">${esc(typeLabel(m))}</span>${fmtDate(r.created_at)}</div>
+          <div class="hist-name">${names}</div>
+          ${m.subject ? `<div class="hist-q">📍 ${esc(m.subject)}${m.kind ? ' · ' + esc(m.kind) : ''}</div>` : ''}
+          ${question ? `<div class="hist-q">${question}</div>` : ''}
+        </div>
+      </div>
+      <details class="hist-detail">
+        <summary>풀이 전체 보기 ▾</summary>
+        <div class="hist-reading">
+          ${m.one_line ? `<p class="one">${esc(m.one_line)}</p>` : ''}
+          <p>${esc(m.reading || '(저장된 풀이가 없어요)')}</p>
+          ${m.caution ? `<p class="caut">⚠ ${esc(m.caution)}</p>` : ''}
+        </div>
+      </details>`;
+    list.appendChild(item);
+  });
+}
+
+init();
+</script>
+</body>
+</html>

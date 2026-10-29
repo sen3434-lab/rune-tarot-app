@@ -2,3 +2,7 @@ node_modules/
 .env
 server.log
 twa/
+
+# Play billing credentials — never commit
+*service-account*.json
+secrets/

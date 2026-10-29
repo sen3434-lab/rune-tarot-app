@@ -124,17 +124,6 @@ export async function getMember(session, nickname) {
   return ensureMemberRow(session, nickname);
 }
 
-export function isSubscribed(member) {
-  return !!member && member.subscription_status === 'active';
-}
-
-// 룬 뽑기 하루 1회 제한의 예외 — 수강생이거나 프리미엄 결제 회원이면 무제한.
-// (프리미엄 4개 카테고리 자체는 결제 회원 전용이라 isSubscribed()만 쓴다 —
-// 수강생이라고 해서 프리미엄까지 자동으로 열리는 건 아니다.)
-export function hasUnlimitedDraws(member) {
-  return !!member && (member.role === 'student' || member.subscription_status === 'active');
-}
-
 export async function signOut() {
   const sb = await getSb();
   await sb.auth.signOut();
@@ -159,7 +148,8 @@ const NAV_ITEMS = [
   { href: '/daily.html', ic: '\u{2600}\u{FE0F}', label: '오늘의 룬' },
   { href: '/draw.html', ic: '\u{1F52E}', label: '룬 뽑기' },
   { href: '/premium.html', ic: '\u{2728}', label: '프리미엄' },
-  { href: '/settings.html', ic: '\u{2699}\u{FE0F}', label: '설정' },
+  { href: '/history.html', ic: '\u{1F4D6}', label: '기록' },
+  { href: '/coins.html', ic: '\u{1FA99}', label: '코인' },
 ];
 
 export function renderBottomNav(active) {
@@ -186,4 +176,70 @@ export async function requireAuth() {
     return null;
   }
   return session;
+}
+
+// ---------------------------------------------------------------------
+// OZ coin wallet (shared by every OZ tarot app — one balance per account).
+// The browser can only READ its wallet; every grant/charge happens inside
+// database functions, so none of this can be forged from the console.
+// ---------------------------------------------------------------------
+const kstDate = () => new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10);
+
+export async function getBalance() {
+  const sb = await getSb();
+  const { data } = await sb.from('wallets').select('balance').maybeSingle();
+  return data?.balance ?? 0;
+}
+
+export async function getPrice(item = 'draw') {
+  const sb = await getSb();
+  const { data } = await sb.from('coin_prices').select('coins').eq('app_key', APP_KEY).eq('item', item).maybeSingle();
+  return data?.coins ?? 1;
+}
+
+// Call once the member row exists. Grants the signup bonus (first time ever)
+// and today's attendance coin (first open of the day, KST). Safe to call
+// repeatedly — the database refuses duplicates — but we remember "done
+// today" to avoid a request on every page. Returns the new balance or null.
+export async function claimFreeCoins(session) {
+  if (!session) return null;
+  const doneKey = `oz_claim_${session.user.id}`;
+  try {
+    if (localStorage.getItem(doneKey) === kstDate()) return null;
+  } catch {}
+  const sb = await getSb();
+  const { data, error } = await sb.rpc('claim_free_coins');
+  if (error || !data?.ok) {
+    if (error) console.error('claim_free_coins failed', error);
+    return null;
+  }
+  try { localStorage.setItem(doneKey, kstDate()); } catch {}
+  const parts = [];
+  if (data.signup > 0) parts.push(`가입 보너스 +${data.signup}코인`);
+  if (data.attendance > 0) parts.push(`출석 보너스 +${data.attendance}코인`);
+  if (data.admin > 0) parts.push(`운영자 지급 +${data.admin}코인`);
+  if (parts.length) showToast('🪙 ' + parts.join(' · '), 3200);
+  return data.balance;
+}
+
+// Small "🪙 N" pill for the top bar. Pass the element; it fills itself in
+// (and shows "로그인" for visitors who are not signed in).
+export async function renderCoinBadge(el) {
+  if (!el) return null;
+  const session = await getSession();
+  if (!session) {
+    el.textContent = '로그인';
+    el.href = '/auth.html';
+    return null;
+  }
+  const balance = await getBalance();
+  el.textContent = '🪙 ' + balance;
+  el.href = '/coins.html';
+  return balance;
+}
+
+// Opens the payment gate when the server says login or coins are missing.
+export function gateMessage(status) {
+  if (status === 401) return { title: '로그인이 필요해요', desc: '가입하면 5코인을 바로 드려요. 풀이는 코인 1개로 열어볼 수 있어요.', btn: '로그인 / 가입하기', href: '/auth.html' };
+  return { title: '코인이 부족해요', desc: '충전하거나, 매일 출석하면 1코인씩 받아요. 수강생 코드를 입력하면 100코인을 드려요.', btn: '코인 충전하기', href: '/coins.html' };
 }

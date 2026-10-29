@@ -17,10 +17,6 @@
   .chip-intro { text-align: center; font-size: 12px; color: var(--muted-foreground); margin: 22px 0 4px; }
 
   #resultView { display: none; }
-  .orientation-tag {
-    display: inline-block; margin-top: 10px; font-size: 11.5px; padding: 4px 12px;
-    border-radius: var(--radius-pill); background: var(--secondary); color: var(--primary-dark); font-weight: 600;
-  }
   .reading-box p { font-size: 14.5px; line-height: 1.9; color: var(--foreground); white-space: pre-wrap; }
 
   .talisman-card { border: 0.8px solid var(--border); border-radius: 16px; overflow: hidden; margin-top: 18px; }
@@ -38,8 +34,11 @@
   .result-actions { display: flex; gap: 10px; margin-top: 24px; }
   .result-actions .btn { flex: 1; }
 
-  .limit-box { text-align: center; padding: 60px 20px; }
-  .limit-box .ic { font-size: 34px; margin-bottom: 12px; }
+  .pay-gate { text-align: center; padding: 26px 20px; margin-top: 22px; background: var(--secondary); border-radius: 16px; }
+  .pay-gate .ic { font-size: 28px; margin-bottom: 8px; }
+  .pay-gate h2 { font-size: 16px; }
+  .pay-gate p { font-size: 13px; line-height: 1.7; color: var(--muted-foreground); margin-top: 8px; }
+  .coin-pill { font-size: 12.5px; font-weight: 600; color: var(--primary-dark); }
 </style>
 </head>
 <body>
@@ -47,6 +46,7 @@
 <div class="topbar">
   <a href="/index.html" class="brand">OZ <span>ᚱ</span> 룬타로</a>
   <div class="topbar-actions">
+    <a href="/coins.html" class="icon-btn coin-pill" id="coinBadge">🪙</a>
     <a href="/settings.html" class="icon-btn">계정</a>
   </div>
 </div>
@@ -57,7 +57,7 @@
     <div class="hero">
       <div class="hero-eyebrow">Draw a Rune</div>
       <h1>지금, 무엇이 궁금하신가요?</h1>
-      <p class="muted small mt-8">질문을 적어주시면 그 상황에 맞춰 룬을 해석해드려요.<br/>비워두셔도 오늘의 조언으로 읽어드릴게요.</p>
+      <p class="muted small mt-8">질문을 적어주시면 그 상황에 맞춰 룬을 해석해드려요.<br/>비워두셔도 오늘의 조언으로 읽어드릴게요.<br/>룬을 뽑는 건 무료, 풀이를 열어보는 데 <strong>코인 1개</strong>가 들어가요.</p>
     </div>
 
     <div class="chip-intro">질문이 잘 떠오르지 않으신가요? 아래에서 골라보세요</div>
@@ -70,24 +70,6 @@
         <button type="submit" class="btn btn-primary" id="drawBtn">🔮 룬 하나 뽑기</button>
       </div>
     </form>
-  </div>
-
-  <div id="limitBoxAnon" class="limit-box" style="display:none;">
-    <div class="ic">🌙</div>
-    <p><strong>비회원은 하루 1회만 무료로 뽑으실 수 있어요.</strong></p>
-    <p class="muted small mt-8">회원가입하시면 계속 룬을 뽑아보실 수 있어요.</p>
-    <div class="result-actions" style="max-width:320px;margin:20px auto 0;">
-      <a href="/auth.html" class="btn btn-primary">무료로 회원가입하기</a>
-    </div>
-  </div>
-
-  <div id="limitBoxMember" class="limit-box" style="display:none;">
-    <div class="ic">🌙</div>
-    <p><strong>오늘의 무료 룬 뽑기를 모두 사용하셨어요.</strong></p>
-    <p class="muted small mt-8">프리미엄 구독하시면 매일 무제한으로 뽑으실 수 있고,<br/>부적 배경화면 다운로드도 함께 이용하실 수 있어요.</p>
-    <div class="result-actions" style="max-width:320px;margin:20px auto 0;">
-      <a href="/subscribe.html" class="btn btn-primary">프리미엄 구독 보기</a>
-    </div>
   </div>
 
   <div id="loadingView" style="display:none;">
@@ -108,7 +90,6 @@
     <div class="rune-medallion mt-24" id="medallion"><div class="glyph" id="glyphEl"></div></div>
     <div class="rune-name" id="runeNameEl"></div>
     <div class="rune-keyword" id="runeKeywordEl"></div>
-    <div class="center"><span class="orientation-tag" id="orientationTag"></span></div>
 
     <div id="aiLoading" class="cast-loading">
       <div class="cast-stage">
@@ -120,11 +101,21 @@
       <p class="cast-label">룬의 메시지를 풀어내고 있어요...</p>
     </div>
 
+    <div id="payGate" class="pay-gate" style="display:none;">
+      <div class="ic" id="gateIc">🔒</div>
+      <h2 id="gateTitle"></h2>
+      <p id="gateDesc"></p>
+      <a href="#" class="btn btn-primary mt-16" id="gateBtn"></a>
+      <p class="small muted mt-16" id="gateRetryNote" style="display:none;">코인은 차감되지 않았어요.</p>
+      <button class="btn btn-outline mt-16" id="gateRetryBtn" style="display:none;">다시 시도하기</button>
+    </div>
+
     <div id="aiContent" style="display:none;">
       <div class="section-label mt-24">리딩</div>
       <div class="card reading-box">
         <p id="readingText"></p>
       </div>
+      <div id="runeInfoBox"></div>
 
       <div class="result-actions">
         <button class="btn btn-outline" id="showTalismanBtn">🪬 부적 보기</button>
@@ -149,7 +140,8 @@
 <canvas id="talismanCanvas" width="1080" height="2400" style="display:none;"></canvas>
 
 <script type="module">
-import { getSb, getSession, getMember, renderBottomNav, showToast, isSubscribed, hasUnlimitedDraws, APP_KEY } from '/js/app.js';
+import { getSession, getMember, renderBottomNav, showToast, claimFreeCoins, renderCoinBadge, gateMessage } from '/js/app.js';
+import { renderRuneInfo } from '/js/runeInfo.js';
 import { getRunes } from '/js/runes.js';
 import { startCastSound, stopCastSound } from '/js/castSound.js';
 import { pickRandomQuestions } from '/js/questionPrompts.js';
@@ -159,8 +151,6 @@ renderBottomNav('/draw.html');
 const askView = document.getElementById('askView');
 const loadingView = document.getElementById('loadingView');
 const resultView = document.getElementById('resultView');
-const limitBoxAnon = document.getElementById('limitBoxAnon');
-const limitBoxMember = document.getElementById('limitBoxMember');
 const askForm = document.getElementById('askForm');
 const chipGrid = document.getElementById('chipGrid');
 const questionText = document.getElementById('questionText');
@@ -171,12 +161,24 @@ let currentRune = null;
 let currentReading = null;
 let selectedQuestion = null;
 
+const PENDING_KEY = 'rt_pending_draw';
+
+// 로그인 화면에 갔다 돌아와도 방금 뽑은 룬을 그대로 이어서 볼 수 있게 보관한다.
+function savePending(rune, question) {
+  try { sessionStorage.setItem(PENDING_KEY, JSON.stringify({ id: rune.id, question })); } catch {}
+}
+function clearPending() {
+  try { sessionStorage.removeItem(PENDING_KEY); } catch {}
+}
+
 (async () => {
   session = await getSession();
-  if (session) member = await getMember(session);
-  if (!isSubscribed(member)) {
-    document.getElementById('showTalismanBtn').textContent = '🔒 부적 보기 (프리미엄)';
+  if (session) {
+    member = await getMember(session);
+    await claimFreeCoins(session);
   }
+  await renderCoinBadge(document.getElementById('coinBadge'));
+  restorePending();
 })();
 
 // A fresh set of sample questions every time the page loads, just like the
@@ -220,84 +222,83 @@ async function pickRandomRune() {
   return runes[Math.floor(Math.random() * runes.length)];
 }
 
-// 룬 뽑기는 비구독 사용자에게 하루 1회 무료 — 로그인 시 enrollments의
-// daily_reading_count/reset_date, 비로그인 시 localStorage로 추적한다.
-// (수강생이거나 프리미엄 결제 회원이면 무제한.) 부적 배경화면 다운로드는
-// 별도로 결제 회원 전용이다(수강생 무료 대상 아님).
-const today = () => new Date().toISOString().slice(0, 10);
-
-async function canDrawToday() {
-  if (session && member) {
-    if (hasUnlimitedDraws(member)) return true;
-    if (member.daily_reading_reset_date !== today()) return true;
-    return member.daily_reading_count < 1;
-  }
-  const raw = localStorage.getItem('rt_free_draw');
-  if (!raw) return true;
-  const { date, count } = JSON.parse(raw);
-  if (date !== today()) return true;
-  return count < 1;
+function showGate(status, rune, question) {
+  const aiLoading = document.getElementById('aiLoading');
+  const aiContent = document.getElementById('aiContent');
+  stopCastSound();
+  aiLoading.style.display = 'none';
+  aiContent.style.display = 'none';
+  const g = gateMessage(status);
+  document.getElementById('gateIc').textContent = status === 401 ? '🔒' : '🪙';
+  document.getElementById('gateTitle').textContent = g.title;
+  document.getElementById('gateDesc').textContent = g.desc;
+  const btn = document.getElementById('gateBtn');
+  btn.textContent = g.btn;
+  btn.href = g.href;
+  document.getElementById('gateRetryNote').style.display = 'none';
+  document.getElementById('gateRetryBtn').style.display = 'none';
+  document.getElementById('payGate').style.display = 'block';
+  // 로그인/충전 화면에 다녀와도 같은 룬으로 이어서 볼 수 있게
+  savePending(rune, question);
 }
 
-async function recordDraw() {
-  if (session && member && !hasUnlimitedDraws(member)) {
-    const sb = await getSb();
-    const resetToday = member.daily_reading_reset_date === today();
-    const newCount = resetToday ? member.daily_reading_count + 1 : 1;
-    await sb.from('enrollments').update({
-      daily_reading_count: newCount,
-      daily_reading_reset_date: today(),
-    }).eq('member_id', session.user.id).eq('app_key', APP_KEY);
-    member.daily_reading_count = newCount;
-    member.daily_reading_reset_date = today();
-  } else if (!hasUnlimitedDraws(member)) {
-    // Falls back to the same localStorage counter canDrawToday() reads
-    // whenever the account-based path above didn't apply — not just for
-    // anonymous visitors, but also if a logged-in session's member row
-    // failed to load. Recording nothing here would silently defeat the
-    // daily limit for that whole case.
-    const raw = localStorage.getItem('rt_free_draw');
-    const cur = raw ? JSON.parse(raw) : { date: today(), count: 0 };
-    const count = cur.date === today() ? cur.count + 1 : 1;
-    localStorage.setItem('rt_free_draw', JSON.stringify({ date: today(), count }));
-  }
+function showRetry(message, rune, question) {
+  stopCastSound();
+  document.getElementById('aiLoading').style.display = 'none';
+  document.getElementById('aiContent').style.display = 'none';
+  document.getElementById('gateIc').textContent = '🌙';
+  document.getElementById('gateTitle').textContent = message;
+  document.getElementById('gateDesc').textContent = '';
+  document.getElementById('gateBtn').style.display = 'none';
+  document.getElementById('gateRetryNote').style.display = 'block';
+  const retry = document.getElementById('gateRetryBtn');
+  retry.style.display = 'inline-flex';
+  retry.onclick = () => loadReading(rune, question);
+  document.getElementById('payGate').style.display = 'block';
 }
 
 async function loadReading(rune, question) {
   const aiLoading = document.getElementById('aiLoading');
   const aiContent = document.getElementById('aiContent');
+  document.getElementById('payGate').style.display = 'none';
+  document.getElementById('gateBtn').style.display = '';
   aiLoading.style.display = 'block';
   aiContent.style.display = 'none';
+
+  const s = await getSession();
+  if (!s) { showGate(401, rune, question); return; }
 
   try {
     const res = await fetch('/api/reading', {
       method: 'POST',
-      headers: { 'content-type': 'application/json' },
+      headers: { 'content-type': 'application/json', Authorization: `Bearer ${s.access_token}` },
       body: JSON.stringify({ id: rune.id, question, displayName: member?.display_name || null }),
     });
+    if (res.status === 401 || res.status === 402) { showGate(res.status, rune, question); return; }
     if (res.status === 429) {
       const { error } = await res.json().catch(() => ({}));
-      stopCastSound();
-      aiLoading.innerHTML = `<p class="muted small">${error || '요청이 너무 많아요. 잠시 후 다시 시도해주세요.'}</p>`;
+      showRetry(error || '요청이 너무 많아요. 잠시 후 다시 시도해주세요.', rune, question);
       return;
     }
     if (!res.ok) throw new Error('reading failed');
     const data = await res.json();
     currentReading = data;
+    clearPending();
 
     document.getElementById('readingText').textContent = data.reading || '';
-    document.getElementById('orientationTag').textContent = data.orientation === '역방향' ? '역방향 · Reversed' : '정방향 · Upright';
 
+    renderRuneInfo(document.getElementById('runeInfoBox'), rune);
     document.getElementById('tlCarry').textContent = rune.talisman_carry || '-';
     document.getElementById('tlMantra').textContent = rune.mantra ? `"${rune.mantra}"` : '';
 
     stopCastSound();
     aiLoading.style.display = 'none';
     aiContent.style.display = 'block';
+    await renderCoinBadge(document.getElementById('coinBadge'));
+    showToast(`🪙 코인 ${data.cost}개를 썼어요 · 풀이는 기록에 저장돼요`, 3200);
   } catch (err) {
     console.error(err);
-    stopCastSound();
-    aiLoading.innerHTML = '<p class="muted small">지금은 리딩 메시지를 불러오지 못했어요. 잠시 후 다시 시도해주세요.</p>';
+    showRetry('지금은 리딩 메시지를 불러오지 못했어요.', rune, question);
   }
 }
 
@@ -309,7 +310,7 @@ function renderResult(rune, question) {
   document.getElementById('talismanCard').style.display = 'none';
   const showTalismanBtn = document.getElementById('showTalismanBtn');
   showTalismanBtn.style.display = 'inline-flex';
-  showTalismanBtn.textContent = isSubscribed(member) ? SHOW_TALISMAN_BTN_LABEL : '🔒 부적 보기 (프리미엄)';
+  showTalismanBtn.textContent = SHOW_TALISMAN_BTN_LABEL;
 
   askView.style.display = 'none';
   loadingView.style.display = 'none';
@@ -320,18 +321,6 @@ function renderResult(rune, question) {
 
 askForm.addEventListener('submit', async (e) => {
   e.preventDefault();
-
-  if (!(await canDrawToday())) {
-    if (session) {
-      showToast('오늘의 무료 룬 뽑기를 모두 사용하셨어요.');
-      limitBoxMember.style.display = 'block';
-    } else {
-      showToast('비회원은 하루 1회만 무료로 이용하실 수 있어요.');
-      limitBoxAnon.style.display = 'block';
-    }
-    askView.style.display = 'none';
-    return;
-  }
 
   const question = document.getElementById('questionText').value.trim();
   askView.style.display = 'none';
@@ -350,16 +339,32 @@ askForm.addEventListener('submit', async (e) => {
 
   startCastSound();
   currentRune = rune;
-  await recordDraw();
 
   setTimeout(() => renderResult(rune, question), 500);
 });
 
+// 로그인/충전 화면에 다녀온 뒤, 보관해 둔 룬으로 이어서 풀이를 연다.
+async function restorePending() {
+  let pending = null;
+  try { pending = JSON.parse(sessionStorage.getItem(PENDING_KEY) || 'null'); } catch {}
+  if (!pending || !session) return;
+  try {
+    const runes = await getRunes();
+    const rune = runes.find((r) => r.id === pending.id);
+    if (!rune) { clearPending(); return; }
+    currentRune = rune;
+    document.getElementById('questionText').value = pending.question || '';
+    renderResult(rune, pending.question || '');
+  } catch (err) {
+    console.error(err);
+  }
+}
+
 function resetToAskView() {
   stopCastSound();
   resultView.style.display = 'none';
-  limitBoxAnon.style.display = 'none';
-  limitBoxMember.style.display = 'none';
+  document.getElementById('payGate').style.display = 'none';
+  clearPending();
   askView.style.display = 'block';
   questionText.value = '';
   selectedQuestion = null;
@@ -568,32 +573,18 @@ async function drawTalismanImage(rune) {
 const DOWNLOAD_BTN_LABEL = '💰 부적 다운로드';
 const SHOW_TALISMAN_BTN_LABEL = '🪬 부적 보기';
 
-// 부적 사용법 + 이미지 다운로드는 프리미엄 구독 전용 — 룬 뽑기 자체는
-// 무료(1회/일)지만, "부적 보기" 클릭 시 구독 여부를 다시 한번 확인한다.
-// 통과하면 사용법(지니는 법·만트라)이 담긴 카드가 열리고, 그 안의 버튼으로
-// 실제 배경화면 이미지를 다운로드할 수 있다.
+// 부적 사용법 + 이미지 다운로드는 풀이를 연(코인 1개를 쓴) 사람에게 열린다.
+// 풀이가 화면에 보일 때만 이 버튼이 나타난다.
 document.getElementById('showTalismanBtn').addEventListener('click', () => {
-  if (!currentRune) return;
-
-  if (!isSubscribed(member)) {
-    showToast('부적은 프리미엄 구독 회원 전용이에요.');
-    setTimeout(() => { window.location.href = '/subscribe.html'; }, 900);
-    return;
-  }
+  if (!currentRune || !currentReading) return;
 
   document.getElementById('talismanCard').style.display = 'block';
   document.getElementById('showTalismanBtn').style.display = 'none';
 });
 
 document.getElementById('downloadBtn').addEventListener('click', async () => {
-  if (!currentRune) return;
+  if (!currentRune || !currentReading) return;
   const btn = document.getElementById('downloadBtn');
-
-  if (!isSubscribed(member)) {
-    showToast('부적 배경화면 다운로드는 프리미엄 구독 회원 전용이에요.');
-    setTimeout(() => { window.location.href = '/subscribe.html'; }, 900);
-    return;
-  }
 
   btn.disabled = true;
   btn.textContent = '이미지 만드는 중...';

@@ -28,7 +28,11 @@
   }
   .reading-box p { font-size: 14.5px; line-height: 1.9; color: var(--foreground); white-space: pre-wrap; }
 
-
+  .coin-pill { font-size: 12.5px; font-weight: 600; color: var(--primary-dark); }
+  .pay-gate { text-align: center; padding: 26px 20px; margin-top: 8px; background: var(--secondary); border-radius: 16px; }
+  .pay-gate .ic { font-size: 28px; margin-bottom: 8px; }
+  .pay-gate h2 { font-size: 16px; }
+  .pay-gate p { font-size: 13px; line-height: 1.7; color: var(--muted-foreground); margin-top: 8px; }
 </style>
 </head>
 <body>
@@ -36,6 +40,7 @@
 <div class="topbar">
   <a href="/index.html" class="brand">OZ <span>ᚱ</span> 룬타로</a>
   <div class="topbar-actions">
+    <a href="/coins.html" class="icon-btn coin-pill" id="coinBadge">🪙</a>
     <a href="/settings.html" class="icon-btn">계정</a>
   </div>
 </div>
@@ -46,7 +51,7 @@
     <div class="hero">
       <div class="hero-eyebrow">Rune of the Day</div>
       <h1 id="introTitle">오늘의 룬을 만나보세요</h1>
-      <p class="muted small mt-8">상황 · 도전 과제 · 조언, 세 룬이 이어주는 오늘 하루 이야기예요.<br/>하루에 한 번만 확인할 수 있어요.</p>
+      <p class="muted small mt-8">상황 · 도전 과제 · 조언, 세 룬이 이어주는 오늘 하루 이야기예요.<br/>세 룬은 누구나 볼 수 있고, 오늘의 리딩을 여는 데 <strong>코인 1개</strong>가 들어가요.</p>
       <div class="date-tag" id="dateTag"></div>
     </div>
     <div class="draw-btn-wrap">
@@ -70,17 +75,31 @@
     <div class="trio-row" id="trioRow"></div>
 
     <div class="one-line-box" id="oneLineBox"></div>
-    <div class="section-label">오늘의 리딩</div>
-    <div class="card reading-box">
-      <p id="readingText"></p>
+
+    <div id="lockedBox">
+      <div class="pay-gate">
+        <div class="ic" id="gateIc">🔒</div>
+        <h2 id="gateTitle">오늘의 리딩을 열어볼까요?</h2>
+        <p id="gateDesc">세 룬이 이어주는 오늘 하루 이야기를 코인 1개로 열어요. 한 번 열면 오늘은 다시 열어도 무료고, 기록에도 저장돼요.</p>
+        <button class="btn btn-primary mt-16" id="unlockBtn">🪙 코인 1개로 오늘의 리딩 열기</button>
+        <a href="#" class="btn btn-primary mt-16" id="gateLink" style="display:none;"></a>
+        <p class="small muted mt-16" id="retryNote" style="display:none;">코인은 차감되지 않았어요.</p>
+      </div>
     </div>
-    <p class="small muted center mt-16">오늘 이 앱을 찾은 모든 분께 같은 룬과 같은 이야기가 전해져요.</p>
+
+    <div id="readingBox" style="display:none;">
+      <div class="section-label">오늘의 리딩</div>
+      <div class="card reading-box">
+        <p id="readingText"></p>
+      </div>
+      <p class="small muted center mt-16">오늘 이 앱을 찾은 모든 분께 같은 룬과 같은 이야기가 전해져요. 열어본 리딩은 <a href="/history.html" style="color:var(--primary-dark);font-weight:600;">기록</a>에 저장돼요.</p>
+    </div>
   </div>
 
 </div>
 
 <script type="module">
-import { getSession, getMember, renderBottomNav, fmtDate, showToast } from '/js/app.js';
+import { getSession, getMember, renderBottomNav, fmtDate, showToast, claimFreeCoins, renderCoinBadge, gateMessage } from '/js/app.js';
 import { startCastSound, stopCastSound } from '/js/castSound.js';
 
 renderBottomNav('/daily.html');
@@ -88,40 +107,38 @@ renderBottomNav('/daily.html');
 const introView = document.getElementById('introView');
 const loadingView = document.getElementById('loadingView');
 const resultView = document.getElementById('resultView');
+const lockedBox = document.getElementById('lockedBox');
+const readingBox = document.getElementById('readingBox');
+const unlockBtn = document.getElementById('unlockBtn');
+const gateLink = document.getElementById('gateLink');
 
-(async () => {
-  const session = await getSession();
-  const member = session ? await getMember(session) : null;
-  if (member?.display_name) {
-    document.getElementById('introTitle').textContent = `${member.display_name}님, 오늘의 룬을 만나보세요`;
-  }
-})();
+let session = null;
+const SEEN_KEY = 'rt_daily_seen';
+// 서버의 todayKST()와 같은 기준(한국 시간)이어야 하루가 어긋나지 않는다.
+const todayKST = new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10);
 
 document.getElementById('dateTag').textContent = fmtDate(new Date());
 
-// The server computes "오늘의 룬" once per calendar day and serves the
-// SAME three runes + reading to every visitor (see GET /api/daily-rune in
-// server.js) — this is just a light client-side cache keyed by the
-// server's own `date` field, so a repeat visit today skips the network
-// round trip instead of re-fetching an answer that hasn't changed.
-const STORAGE_KEY = 'rt_daily_rune';
-
-function loadCached() {
+(async () => {
+  session = await getSession();
+  if (session) {
+    const member = await getMember(session);
+    await claimFreeCoins(session);
+    if (member?.display_name) {
+      document.getElementById('introTitle').textContent = `${member.display_name}님, 오늘의 룬을 만나보세요`;
+    }
+  }
+  await renderCoinBadge(document.getElementById('coinBadge'));
+  // 오늘 이미 확인한 적이 있으면 바로 펼쳐서 보여준다 (열어둔 리딩이면 풀이까지)
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : null;
-  } catch { return null; }
-}
-
-function saveCached(payload) {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(payload)); } catch {}
-}
+    if (session && localStorage.getItem(SEEN_KEY) === todayKST) fetchDailyRune();
+  } catch {}
+})();
 
 const POSITIONS = ['오늘의 상황', '도전 과제', '조언'];
 
 function renderTrio(runes) {
-  const trioRow = document.getElementById('trioRow');
-  trioRow.innerHTML = runes.map((r, i) => `
+  document.getElementById('trioRow').innerHTML = runes.map((r, i) => `
     <div class="trio-item">
       <div class="pos-label">${POSITIONS[i]}</div>
       <div class="rune-medallion sm" style="margin:0 auto;"><div class="glyph">${r.glyph}</div></div>
@@ -130,13 +147,38 @@ function renderTrio(runes) {
   `).join('');
 }
 
+function showReading(text) {
+  lockedBox.style.display = 'none';
+  readingBox.style.display = 'block';
+  document.getElementById('readingText').textContent = text || '';
+}
+
+function showGate(status) {
+  const g = gateMessage(status);
+  document.getElementById('gateIc').textContent = status === 401 ? '🔒' : '🪙';
+  document.getElementById('gateTitle').textContent = g.title;
+  document.getElementById('gateDesc').textContent = g.desc;
+  unlockBtn.style.display = 'none';
+  gateLink.textContent = g.btn;
+  gateLink.href = g.href;
+  gateLink.style.display = 'inline-flex';
+}
+
 function showResult(data) {
   introView.style.display = 'none';
   loadingView.style.display = 'none';
   resultView.style.display = 'block';
   renderTrio(data.runes);
   document.getElementById('oneLineBox').textContent = data.one_line || '';
-  document.getElementById('readingText').textContent = data.reading || '';
+  if (data.locked) {
+    lockedBox.style.display = 'block';
+    readingBox.style.display = 'none';
+    unlockBtn.style.display = 'inline-flex';
+    gateLink.style.display = 'none';
+    document.getElementById('retryNote').style.display = 'none';
+  } else {
+    showReading(data.reading);
+  }
 }
 
 async function fetchDailyRune() {
@@ -145,32 +187,62 @@ async function fetchDailyRune() {
   startCastSound();
 
   try {
-    const res = await fetch('/api/daily-rune');
+    const s = await getSession();
+    const res = await fetch('/api/daily-rune', s ? { headers: { Authorization: `Bearer ${s.access_token}` } } : {});
+    if (res.status === 429) {
+      const { error } = await res.json().catch(() => ({}));
+      throw new Error(error || '요청이 너무 많아요. 잠시 후 다시 시도해주세요.');
+    }
     if (!res.ok) throw new Error('daily rune failed');
     const data = await res.json();
     stopCastSound();
-    saveCached(data);
+    try { localStorage.setItem(SEEN_KEY, todayKST); } catch {}
     showResult(data);
   } catch (err) {
     console.error(err);
     stopCastSound();
     loadingView.style.display = 'none';
     introView.style.display = 'block';
-    showToast('오늘의 룬을 불러오지 못했어요. 잠시 후 다시 시도해주세요.');
+    showToast(err.message && err.message.length < 60 ? err.message : '오늘의 룬을 불러오지 못했어요. 잠시 후 다시 시도해주세요.');
+  }
+}
+
+async function unlockReading() {
+  const s = await getSession();
+  if (!s) { showGate(401); return; }
+  unlockBtn.disabled = true;
+  unlockBtn.textContent = '열고 있어요…';
+  try {
+    const res = await fetch('/api/daily-rune/unlock', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', Authorization: `Bearer ${s.access_token}` },
+      body: '{}',
+    });
+    if (res.status === 401 || res.status === 402) { showGate(res.status); return; }
+    if (res.status === 409) {
+      // 자정을 넘겨 날짜가 바뀐 경우: 새 날의 룬을 다시 불러온다
+      showToast('날짜가 바뀌었어요. 새 룬을 불러올게요.');
+      resultView.style.display = 'none';
+      fetchDailyRune();
+      return;
+    }
+    if (!res.ok) throw new Error('unlock failed');
+    const data = await res.json();
+    showReading(data.reading);
+    await renderCoinBadge(document.getElementById('coinBadge'));
+    showToast(data.already ? '이미 열어본 리딩이에요 (코인 차감 없음)' : `🪙 코인 ${data.cost}개를 썼어요 · 기록에 저장돼요`, 3200);
+  } catch (err) {
+    console.error(err);
+    document.getElementById('retryNote').style.display = 'block';
+    showToast('리딩을 불러오지 못했어요. 코인은 차감되지 않았어요.');
+  } finally {
+    unlockBtn.disabled = false;
+    unlockBtn.textContent = '🪙 코인 1개로 오늘의 리딩 열기';
   }
 }
 
 document.getElementById('drawBtn').addEventListener('click', fetchDailyRune);
-
-// on load: today's answer is a fixed, shared value, so show it straight
-// away if we already have it cached for today's date. Computed in KST to
-// match the server's todayKST() — otherwise the two would disagree for a
-// 9-hour window around KST midnight (UTC and KST are on different days).
-const todayKST = new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10);
-const cached = loadCached();
-if (cached && cached.date === todayKST) {
-  showResult(cached);
-}
+unlockBtn.addEventListener('click', unlockReading);
 </script>
 </body>
 </html>

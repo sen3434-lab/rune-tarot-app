@@ -2,12 +2,13 @@
 // color-tarot-app uses (card_type = '룬타로' vs '컬러타로') — see
 // data/schema_migration_rune.sql for the column reuse/addition rationale.
 // Aliases in SELECT map tarot_cards' column names back to the field names
-// this app's pages use (name_en, keywords, upright, reversed, mantra).
+// this app's pages use (name_en, keywords, mantra). Runes are read without
+// an upright/reversed distinction.
 import { getSb } from '/js/app.js';
 
 const SELECT = [
   'id', 'name_ko', 'glyph', 'name_en:name', 'keywords:keyword', 'meaning',
-  'deity', 'element', 'upright:advice', 'reversed:caution', 'remedy_magic',
+  'deity', 'element', 'advice', 'caution', 'remedy_magic',
   'talisman_material', 'talisman_engrave', 'talisman_carry', 'mantra:mood_quote',
 ].join(', ');
 

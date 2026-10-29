@@ -38,7 +38,7 @@
 <div class="topbar">
   <a href="/index.html" class="brand">OZ <span>ᚱ</span> 룬타로</a>
   <div class="topbar-actions">
-    <span class="badge badge-free" id="roleBadge">불러오는 중</span>
+    <a href="/coins.html" class="icon-btn" id="coinBadge" style="font-weight:600;color:var(--primary-dark);">🪙</a>
     <a href="/settings.html" class="icon-btn">계정</a>
   </div>
 </div>
@@ -58,17 +58,17 @@
     <a class="nav-card" href="/daily.html">
       <div class="ic">☀️</div>
       <div class="title">오늘의 룬</div>
-      <div class="desc">세 룬이 전하는 오늘 하루 이야기</div>
+      <div class="desc">세 룬이 전하는 오늘 하루 이야기 · 🪙1</div>
     </a>
     <a class="nav-card" href="/draw.html">
       <div class="ic">🔮</div>
       <div class="title">룬 뽑기</div>
-      <div class="desc">질문을 품고 룬 하나를 뽑아보세요</div>
+      <div class="desc">질문을 품고 룬 하나를 뽑아보세요 · 🪙1</div>
     </a>
     <a class="nav-card" href="/premium.html">
       <div class="ic">✨</div>
       <div class="title">프리미엄 룬</div>
-      <div class="desc">애정 · 주식 · 부동산 · 건강</div>
+      <div class="desc">애정 · 재물 · 주거 · 건강 · 🪙1</div>
     </a>
     <a class="nav-card" href="#about">
       <div class="ic">ᛟ</div>
@@ -106,33 +106,22 @@
 </div>
 
 <script type="module">
-import { getSession, getMember, renderBottomNav } from '/js/app.js';
+import { getSession, getMember, renderBottomNav, claimFreeCoins, renderCoinBadge } from '/js/app.js';
 
 renderBottomNav('/index.html');
 
-const roleBadge = document.getElementById('roleBadge');
-
-async function refreshBadge() {
+async function init() {
   const session = await getSession();
-  if (!session) {
-    roleBadge.textContent = '비로그인';
-    roleBadge.className = 'badge badge-free';
-    return;
+  if (session) {
+    const member = await getMember(session);
+    await claimFreeCoins(session);
+    if (member?.display_name) {
+      document.getElementById('heroTitle').textContent = `${member.display_name}님, 오늘의 답을 들려드릴게요`;
+    }
   }
-  const member = await getMember(session);
-  if (!member) { roleBadge.textContent = '오류'; return; }
-  if (member.subscription_status === 'active') {
-    roleBadge.textContent = '✦ 프리미엄 구독중';
-    roleBadge.className = 'badge badge-active';
-  } else {
-    roleBadge.textContent = '무료 회원';
-    roleBadge.className = 'badge badge-free';
-  }
-  if (member.display_name) {
-    document.getElementById('heroTitle').textContent = `${member.display_name}님, 오늘의 답을 들려드릴게요`;
-  }
+  await renderCoinBadge(document.getElementById('coinBadge'));
 }
-refreshBadge();
+init();
 </script>
 </body>
 </html>

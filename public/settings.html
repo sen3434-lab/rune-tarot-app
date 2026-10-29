@@ -26,6 +26,31 @@
 </div>
 
 <div class="container">
+  <div id="soundSection">
+    <div class="section-label">소리 · 진동</div>
+    <div class="card mb-24">
+      <div class="row">
+        <span class="rl">룬 던지는 소리</span>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+          <input type="checkbox" id="soundToggle" style="width:20px;height:20px;"/>
+          <span id="soundLabel" style="font-size:13px;"></span>
+        </label>
+      </div>
+      <div class="row">
+        <span class="rl">진동</span>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+          <input type="checkbox" id="vibeToggle" style="width:20px;height:20px;"/>
+          <span id="vibeLabel" style="font-size:13px;"></span>
+        </label>
+      </div>
+      <div class="row">
+        <span class="rl">미리 느껴보기</span>
+        <button class="btn btn-outline btn-sm" id="soundTestBtn">▶ 미리 체험하기</button>
+      </div>
+      <p class="small muted" style="padding:10px 0 4px;line-height:1.6;">룬 뽑기, 오늘의 룬, 프리미엄 룬에서 룬을 던질 때 나는 소리와 진동이에요. 소리를 끄고 진동만 켜도 돼요. 진동은 안드로이드 폰에서만 작동하고, 이 기기에만 적용돼요.</p>
+    </div>
+  </div>
+
   <div id="gate" style="display:none;" class="empty-state">
     <div class="ic">🔒</div>
     <p>설정은 로그인 후 확인하실 수 있어요.</p>
@@ -34,7 +59,7 @@
 
   <div id="content" style="display:none;">
     <div class="profile-head">
-      <div class="avatar">ᚱ</div>
+      <div class="avatar">🙂</div>
       <div class="email" id="userEmail"></div>
       <span class="badge mt-8" id="roleBadge"></span>
     </div>
@@ -49,7 +74,7 @@
         </span>
       </div>
       <div class="row"><span class="rl">등급</span><span id="rowRole"></span></div>
-      <div class="row"><span class="rl">프리미엄 구독</span><span id="rowSub"></span></div>
+      <div class="row"><span class="rl">보유 코인</span><span><a href="/coins.html" id="rowCoins" style="color:var(--primary-dark);font-weight:600;">-</a></span></div>
       <div class="row"><span class="rl">가입일</span><span id="rowJoined"></span></div>
     </div>
 
@@ -57,12 +82,16 @@
       <div class="section-label">일반</div>
       <div class="card mb-24">
         <div class="row" id="rowVerify">
-          <span class="rl">수강생 인증</span>
+          <span class="rl">정규 수강생 인증</span>
           <a href="/verify-student.html" class="btn btn-outline btn-sm">인증하기</a>
         </div>
-        <div class="row" id="rowSubscribe">
-          <span class="rl">프리미엄 구독 관리</span>
-          <a href="/subscribe.html" class="btn btn-outline btn-sm">보기</a>
+        <div class="row">
+          <span class="rl">코인 충전 · 내역</span>
+          <a href="/coins.html" class="btn btn-outline btn-sm">보기</a>
+        </div>
+        <div class="row" id="rowAdmin" style="display:none;">
+          <span class="rl">운영자 도구</span>
+          <a href="/admin.html" class="btn btn-outline btn-sm">코인 지급</a>
         </div>
       </div>
     </div>
@@ -73,8 +102,51 @@
 </div>
 
 <script type="module">
-import { getSb, getSession, getMember, signOut, renderBottomNav, fmtDate, showToast, isSubscribed } from '/js/app.js';
+import { getSb, getSession, getMember, getBalance, signOut, renderBottomNav, fmtDate, showToast } from '/js/app.js';
+import { isSoundOn, setSoundOn, isVibeOn, setVibeOn, canVibrate, startCastSound, stopCastSound } from '/js/castSound.js';
 renderBottomNav('/settings.html');
+
+// ---- 소리 설정 (로그인 없이도 바꿀 수 있다)
+const soundToggle = document.getElementById('soundToggle');
+const soundLabel = document.getElementById('soundLabel');
+const vibeToggle = document.getElementById('vibeToggle');
+const vibeLabel = document.getElementById('vibeLabel');
+const soundTestBtn = document.getElementById('soundTestBtn');
+let testTimer = null;
+function paintSound() {
+  const s = isSoundOn();
+  soundToggle.checked = s;
+  soundLabel.textContent = s ? '켜짐' : '꺼짐';
+  if (!canVibrate()) {
+    vibeToggle.checked = false;
+    vibeToggle.disabled = true;
+    vibeLabel.textContent = '이 기기는 지원하지 않아요';
+  } else {
+    const v = isVibeOn();
+    vibeToggle.checked = v;
+    vibeLabel.textContent = v ? '켜짐' : '꺼짐';
+  }
+  soundTestBtn.disabled = !(s || (canVibrate() && vibeToggle.checked));
+}
+paintSound();
+soundToggle.addEventListener('change', () => {
+  setSoundOn(soundToggle.checked);
+  clearTimeout(testTimer);
+  paintSound();
+  showToast(soundToggle.checked ? '소리를 켰어요' : '소리를 껐어요');
+});
+vibeToggle.addEventListener('change', () => {
+  setVibeOn(vibeToggle.checked);
+  clearTimeout(testTimer);
+  paintSound();
+  showToast(vibeToggle.checked ? '진동을 켰어요' : '진동을 껐어요');
+});
+soundTestBtn.addEventListener('click', () => {
+  if (soundTestBtn.disabled) return;
+  startCastSound(); // 눌렀을 때 바로 시작해야 브라우저가 소리·진동을 허용한다
+  clearTimeout(testTimer);
+  testTimer = setTimeout(stopCastSound, 2200);
+});
 
 let currentSession = null;
 
@@ -93,19 +165,21 @@ async function init() {
 
   document.getElementById('nameInput').value = member.display_name || '';
 
-  const isStudent = member.role === 'student';
-  const subscribed = isSubscribed(member);
-  const roleLabel = isStudent ? '🎓 수강생' : (subscribed ? '✦ 프리미엄 구독중' : '무료 회원');
+  const roleLabel = member.role === 'student' ? '🎓 정규 수강생' : '일반 회원';
   document.getElementById('roleBadge').textContent = roleLabel;
-  document.getElementById('roleBadge').className = 'badge mt-8 ' + (isStudent ? 'badge-student' : (subscribed ? 'badge-active' : 'badge-free'));
-  document.getElementById('rowRole').textContent = isStudent ? '🎓 수강생 (룬 뽑기 무제한)' : '일반 회원';
+  document.getElementById('roleBadge').className = 'badge mt-8 ' + (member.role === 'student' ? 'badge-student' : 'badge-free');
+  document.getElementById('rowRole').textContent = roleLabel;
 
-  const subLabel = { free: '무료', active: '구독중', expired: '만료됨' }[member.subscription_status] || member.subscription_status;
-  document.getElementById('rowSub').textContent = subLabel;
+  document.getElementById('rowCoins').textContent = '🪙 ' + (await getBalance()) + '코인';
+  const { data: isAdmin } = await (await getSb()).rpc('am_i_admin');
+  if (isAdmin === true) document.getElementById('rowAdmin').style.display = 'flex';
   document.getElementById('rowJoined').textContent = member.created_at ? fmtDate(member.created_at) : '-';
 
+  const isStudent = member.role === 'student';
   document.getElementById('rowVerify').style.display = isStudent ? 'none' : 'flex';
-  document.getElementById('rowSubscribe').style.display = subscribed ? 'none' : 'flex';
+  if (isStudent) {
+    document.getElementById('generalSection').style.display = 'none';
+  }
 }
 init();
 

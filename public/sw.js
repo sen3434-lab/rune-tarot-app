@@ -1,4 +1,4 @@
-const CACHE_NAME = 'rune-tarot-v1';
+const CACHE_NAME = 'rune-tarot-v2';
 const APP_SHELL = [
   '/index.html',
   '/css/style.css',
