@@ -180,7 +180,7 @@ const cleanQuestion = (q) => String(q || '').slice(0, 500);
 // 주식·부동산 리딩은 "무엇에 대한 리딩인지"를 받는다. 프롬프트에 그대로 들어가므로
 // 글자 종류와 길이를 엄격히 제한한다(지시문 끼워 넣기 방지).
 const REALESTATE_KINDS = ['이사 고민', '새 집 계약 앞둠', '입주 앞둠', '지금 사는 곳'];
-const SUBJECT_RE = /^[0-9A-Za-z가-힣 .,&()\-]{1,40}$/;
+const SUBJECT_RE = /^[0-9A-Za-z가-힣ㄱ-ㅎㅏ-ㅣ ·.,&()\-_/=+#~]{1,40}$/;
 function cleanSubject(v) {
   const s = String(v == null ? '' : v).replace(/\s+/g, ' ').trim();
   if (!s) return { error: 'subject_required' };

@@ -66,7 +66,17 @@ export async function initPremiumPage(config) {
   }
 
   const askForm = document.getElementById('askForm');
-  const SUBJECT_RE = /^[0-9A-Za-z가-힣 .,&()\-]{1,40}$/;
+  const SUBJECT_MAX = 40;
+  const ALLOWED_CHAR = /[0-9A-Za-z가-힣ㄱ-ㅎㅏ-ㅣ ·.,&()\-_/=+#~]/;
+  // Returns an error message, or '' when the text is fine.
+  function subjectProblem(text) {
+    const chars = Array.from(text);
+    if (!chars.length) return '사는 곳(동네·단지)을 입력해주세요.';
+    if (chars.length > SUBJECT_MAX) return `${SUBJECT_MAX}자까지만 입력할 수 있어요. (지금 ${chars.length}자)`;
+    const bad = [...new Set(chars.filter((c) => !ALLOWED_CHAR.test(c)))];
+    if (bad.length) return `사용할 수 없는 글자가 있어요: ${bad.join(' ')}`;
+    return '';
+  }
 
   // 주거룬: 어디(동네·단지)에 대한 리딩인지, 어떤 상황인지 먼저 받는다.
   if (subjectCfg) {
@@ -83,7 +93,22 @@ export async function initPremiumPage(config) {
     input.placeholder = subjectCfg.placeholder || '';
     input.autocomplete = 'off';
     input.style.cssText = 'width:100%;border:0.8px solid var(--border);border-radius:10px;padding:11px 12px;font-size:14px;background:var(--card);';
-    wrap.append(lab, input);
+    const counter = document.createElement('div');
+    counter.id = 'subjectCounter';
+    counter.style.cssText = 'text-align:right;font-size:11.5px;color:var(--muted-foreground);margin-top:4px;';
+    const paintCounter = () => {
+      const n = Array.from(input.value).length;
+      counter.textContent = `${n}/${SUBJECT_MAX}`;
+      counter.style.color = n >= SUBJECT_MAX ? 'var(--danger)' : 'var(--muted-foreground)';
+    };
+    // 한글 입력 중에도 40자를 넘기지 못하게 즉시 잘라낸다
+    input.addEventListener('input', () => {
+      const chars = Array.from(input.value);
+      if (chars.length > SUBJECT_MAX) input.value = chars.slice(0, SUBJECT_MAX).join('');
+      paintCounter();
+    });
+    paintCounter();
+    wrap.append(lab, input, counter);
     if (Array.isArray(kinds) && kinds.length) {
       const sel = document.createElement('select');
       sel.id = 'kindSelect';
@@ -119,8 +144,8 @@ export async function initPremiumPage(config) {
     const kindEl = document.getElementById('kindSelect');
     const kind = kindEl ? kindEl.value : '';
     if (subjectCfg) {
-      if (!subject) { showToast('사는 곳(동네·단지)을 입력해주세요.'); return; }
-      if (!SUBJECT_RE.test(subject)) { showToast('한글·숫자·영문만 40자까지 입력할 수 있어요.'); return; }
+      const problem = subjectProblem(subject);
+      if (problem) { showToast(problem, 3200); return; }
     }
 
     const fresh = await getSession();
